@@ -6,32 +6,36 @@ export class ODE {
     //y2' = g(x, y1, y2)
     constructor(...funs) {
         this.funs = funs;
-        this.num_steps = 1000;
+        this._nh = 1000;
         this.n = funs.length;
     }
 
+    set nh(value) {
+        this._nh = value;
+    }
+
     solve(x0, x1, ...y0) {
-        let ts = new TimeSeries(x0, x1, this.num_steps);
+        let ts = new TimeSeries(x0, x1, this._nh);
         let h = ts.h;
 
         //initial values
         ts.points[0] = Point.create(...y0);
 
-        for (let s = 0; s < this.num_steps; s++) {
+        for (let s = 0; s < ts.length - 1; s++) {
             let y_s = ts.points[s];
             let x_s = ts.x(s);
 
             let y_tilde_s_plus_1 = new Point(this.n);
             let f_xs_ys = new Point(this.n);
             for (let i = 0; i < this.n; i++) {
-                f_xs_ys[i] = this.funs[i](x_s, ...y_s);
-                y_tilde_s_plus_1[i] = y_s[i] + h * f_xs_ys[i];
+                f_xs_ys.vals[i] = this.funs[i](x_s, ...y_s.vals);
+                y_tilde_s_plus_1.vals[i] = y_s.vals[i] + h * f_xs_ys.vals[i];
             }
 
             let y_s_plus_1 = new Point(this.n);
             let x_s_plus_1 = ts.x(s + 1);
             for (let i = 0; i < this.n; i++)
-                y_s_plus_1[i] = y_s + h * (f_xs_ys[i] + this.funs[i](x_s_plus_1, ...y_tilde_s_plus_1)) / 2;
+                y_s_plus_1.vals[i] = y_s.vals[i] + h * (f_xs_ys.vals[i] + this.funs[i](x_s_plus_1, ...y_tilde_s_plus_1.vals)) / 2;
 
             ts.points[s + 1] = y_s_plus_1;
         }
@@ -40,30 +44,39 @@ export class ODE {
     }
 }
 
-export class Point extends Array {
+export class Point {
     constructor(n) {
-        super(n);
+        this._vals = new Array(n);
     }
 
     static create(...vals) {
         let n = vals.length;
         let p = new Point(n);
         for (let i = 0; i < n; i++)
-            p[i] = vals[i];
+            p._vals[i] = vals[i];
         return p;
+    }
+
+    get vals() {
+        return this._vals;
     }
 }
 
-export class TimeSeries extends Array {
-    constructor(x0, x1, n) {
-        super();
+export class TimeSeries {
+    constructor(x0, x1, nh) {
         this.x0 = x0;
         this.x1 = x1;
-        this.n = n;
 
-        this._h = (x1 - x0) / n;
+        //if nh is integer
+        if (nh == Math.round(nh)) {
+            this.n = nh;
+            this._h = (x1 - x0) / nh;
+        } else {
+            this._h = nh;
+            this.n = Math.round((x1 - x0) / nh);
+        }
 
-        this._points = new Array(n + 1);
+        this._points = new Array(this.n + 1);
     }
 
     x(i) {
