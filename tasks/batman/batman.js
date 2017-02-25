@@ -1,7 +1,12 @@
+import 'file-loader?name=rangeslider.css!./rangeslider.css'
+import 'file-loader?name=rangeslider.min.js!./rangeslider.min.js'
+
 import './batman.scss'
 import {BatmanFlightView} from './batman-flight-view'
 import {Path} from './path'
 import {BatmanAction} from './batman_action'
+import {ValuesInput} from './values_input'
+import {ListOfElements} from './list_of_elements'
 
 export class Batman {
 
@@ -22,7 +27,7 @@ export class Batman {
 
     preloadManifest() {
         return [
-            {id: "fly1", src:"batman-resources/fly1.png"}
+            {id: "fly1", src: "batman-resources/fly1.png"}
         ];
     }
 
@@ -36,26 +41,13 @@ export class Batman {
                 name: "landing_time",
                 title: "Приземление за минуту",
                 ordering: 'maximize',
-                normalize: v => {console.debug('normalizing', v); return v <= 60 ? 1 : 0},
+                normalize: v => {
+                    return v <= 60 ? 1 : 0
+                },
                 view(v) {
                     if (v == 0) return "нет"; else return "да"
                 }
             },
-            /*{
-                name: "landing_speed",
-                title: "Скорость приземления",
-                ordering: 'maximize',
-                normalize(v) {
-                    return speed_is_ok(v)
-                },
-                view(v) {
-                    let info = '(' + v + 'м/c)';
-                    if (speed_is_ok(v))
-                        return 'удачно ' + info;
-                    else
-                        return 'слишком быстро ' + info;
-                }
-            },*/
             {
                 name: "loops",
                 title: "Фигур",
@@ -84,6 +76,37 @@ export class Batman {
     //private methods
 
     initInterface(domNode) {
+        this.go = () => {
+            requestAnimationFrame(this.go);
+
+            let newTime = new Date().getTime();
+            this.time += (newTime - this.prevTime) / 1000;
+            this.prevTime = newTime;
+
+            this.batman_view.redraw(this.current_path, this.time);
+        };
+
+        this.initCanvas(domNode);
+
+        this.initTimeSliderStartAndStop(domNode);
+
+        this.InitParamsSelector(domNode);
+
+        this.initEvalButton(domNode);
+    }
+
+    static take_actions_from(elements_list) {
+        let actions = [];
+        for (let element of elements_list) {
+            let val = element.values;
+            let action = new BatmanAction(val);
+            actions.push(action);
+        }
+
+        return actions;
+    }
+
+    initCanvas(domNode) {
         this.canvas = document.createElement('canvas');
         domNode.appendChild(this.canvas);
         this.canvas.className = "kio-batman-canvas";
@@ -95,27 +118,99 @@ export class Batman {
             y_top: 20,
             pixel_size: 0.1 * 2
         });
+    }
 
-        let actions = [
-            new BatmanAction(0.12, 0.12 * 2, 0.4),
-            new BatmanAction(0.12, 0.12 * 0.04, 6)
-        ];
+    initTimeSliderStartAndStop(domNode) {
+        let $time_controls = $('<div class="kio-batman-time-controls">');
+        let playPause = Batman.button('>');
+        let toStart = Batman.button('|<');
 
-        let pp = new Path({v0: 80, theta0: -Math.PI / 6, x0: 0, y0: 0}, {B0: 0.12, C0: 0.4 * 0.12, tmax: 60, dt: 0.01}, actions);
-        this.current_path = pp;
+        let $slider = $('<input type="range" min="10" max="1000" step="10" value="300">');
+        $slider.rangeslider();
 
-        let time = 0;
-        let go = () => {
-            requestAnimationFrame(go);
+        $time_controls.append(playPause, toStart, $slider);
 
-            let newTime = new Date().getTime();
-            time += (newTime - prevTime) / 1000;
-            prevTime = newTime;
+        domNode.appendChild($time_controls.get(0));
+    }
 
-            this.batman_view.redraw(pp, time);
-        };
-        let prevTime = new Date().getTime();
-        requestAnimationFrame(go);
+    InitParamsSelector(domNode) {
+        this.initial_params = [{
+            name: 'v0',
+            title: 'v'
+        }, {
+            name: 'theta0',
+            title: 'θ'
+        }, {
+            name: 'phi0',
+            title: 'φ'
+        }, {
+            name: 'phidt0',
+            title: "φ'"
+        }];
+
+        this.intermediate_action_params = [{
+            name: 'B0',
+            title: 'B0'
+        }, {
+            name: 'C0',
+            title: 'C0'
+        }, {
+            name: 'C1',
+            title: 'C1'
+        }, {
+            name: 'M',
+            title: 'M'
+        }];
+
+        this.initial_params_values_input = new ValuesInput(
+            ...this.initial_params, ...this.intermediate_action_params
+        );
+
+        domNode.appendChild(this.initial_params_values_input.domNode);
+
+        this.actions_list_of_elements = new ListOfElements(() => {
+            return new ValuesInput({
+                name: 't',
+                title: 't'
+            }, ...this.intermediate_action_params);
+        }, []);
+        domNode.appendChild(this.actions_list_of_elements.domNode);
+    }
+
+
+    initEvalButton(domNode) {
+        let evalButton = Batman.button('Eval');
+        $(evalButton).click(e => {
+            let actions = Batman.take_actions_from(this.actions_list_of_elements.elements_list);
+
+            this.current_path = new Path({
+                ...this.initial_params_values_input.values,
+                x0: 0,
+                y0: 0
+            }, {
+                ...this.initial_params_values_input.values,
+                tmax: 60,
+                dt: 0.01
+            }, actions);
+
+            this.moveToTime(0);
+        });
+
+        $(evalButton).click();
+
+        domNode.appendChild(evalButton);
+    }
+
+    moveToTime(time) {
+        this.prevTime = new Date().getTime();
+        this.time = time;
+        requestAnimationFrame(this.go);
+    }
+
+    static button(title) {
+        let d = document.createElement('button');
+        d.innerText = title;
+        d.className = 'kio-base-control-button';
     }
 }
 //в перескопах увидят войну ...

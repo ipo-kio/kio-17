@@ -1,0 +1,25 @@
+.kio-batman-list-of-elements {
+  .item {
+    margin-top: 0.4em;
+
+    .left {
+      margin-right: 1em;
+    }
+
+    .right {
+      width: 1em;
+      float:right;
+    }
+  }
+
+  .controls {
+    text-align: center;
+  }
+
+  a {
+    text-decoration: none;
+    font-family: "Courier New", monospace;
+    font-size: 2em;
+    font-weight: bold;
+  }
+}

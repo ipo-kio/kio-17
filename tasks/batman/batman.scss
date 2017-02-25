@@ -1,4 +1,29 @@
+@import './list_of_elements.scss';
+
 .kio-batman-canvas {
   display: block;
   margin: 0 auto;
+}
+
+.kio-batman-values-list {
+  input {
+    margin-right: 1em;
+    text-align: center;
+  }
+
+  span {
+    margin-right: 0.2em;
+  }
+}
+
+.kio-batman-time-controls {
+  button {
+    float: right;
+  }
+
+  input {
+    overflow: hidden;
+    display: block;
+    padding: 0 4px 0 10px;
+  }
 }

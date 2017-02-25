@@ -33,7 +33,11 @@ module.exports = function (env) {
                     include: sourceFolders,
                     options: {
                         presets: [
-                            ['es2015', {"modules": false}] //this is es2015 preset with options
+                            ['es2015', {"modules": false}], //this is es2015 preset with options
+                        ],
+                        plugins: [
+                            "transform-object-rest-spread",
+                            // ["transform-object-rest-spread", { "useBuiltIns": true }]
                         ]
                     }
                 },
@@ -44,16 +48,6 @@ module.exports = function (env) {
                         fallback: "style-loader",
                         use: ["css-loader", "sass-loader"]
                     })
-                },
-                {
-                    // test: /.*/,
-                    include: [path.join(__dirname, 'src/kio_test_box/static')],
-                    use: [{
-                        loader: 'file-loader',
-                        options: {
-                            name: "[name].[ext]"
-                        }
-                    }]
                 }
             ]
         },
@@ -63,7 +57,7 @@ module.exports = function (env) {
                 {from: './tasks/batman/batman.html'},
                 {from: './tasks/batman/*.png', to: './batman-resources', flatten: true},
                 // {from: './tasks/batman/batman.html'}
-            ]),
+            ])
         ]
     };
 
