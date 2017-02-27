@@ -46,7 +46,12 @@ module.exports = function (env) {
                     include: sourceFolders,
                     use: ExtractTextPlugin.extract({
                         fallback: "style-loader",
-                        use: ["css-loader", "sass-loader"]
+                        use: [{
+                            loader: "css-loader",
+                            options: {
+                                url: false
+                            }
+                        }, "sass-loader"]
                     })
                 }
             ]

@@ -17,13 +17,64 @@
 }
 
 .kio-batman-time-controls {
-  button {
-    float: right;
+
+  width: 100%;
+
+  .rangeslider,
+  .rangeslider__fill {
+    display: block;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
   }
 
-  input {
-    overflow: hidden;
-    display: block;
-    padding: 0 4px 0 10px;
+  .rangeslider {
+    background: #e6e6e6;
+    position: relative;
+    width: 100%;
   }
+
+  .rangeslider--horizontal {
+    height: 4px;
+    width: 100%;
+  }
+
+  .rangeslider--disabled {
+    filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=40);
+    opacity: 0.4;
+  }
+
+  .rangeslider__fill {
+    background: #ff310f;
+    position: absolute;
+  }
+  .rangeslider--horizontal .rangeslider__fill {
+    top: 0;
+    height: 100%;
+  }
+  .rangeslider--vertical .rangeslider__fill {
+    bottom: 0;
+    width: 100%;
+  }
+
+  .rangeslider__handle {
+    cursor: pointer;
+    display: inline-block;
+    position: absolute;
+    width:60px;
+    height:18px;
+    background: url(batman-resources/fly1.png) no-repeat;
+  }
+  .rangeslider__handle:active, .rangeslider--active .rangeslider__handle {
+    box-shadow: -1px 0 #fffb37, 0 -1px #fffb37, 1px 0 #fffb37, 0 1px #fffb37;
+  }
+  .rangeslider--horizontal .rangeslider__handle {
+    top: -7px;
+    touch-action: pan-y;
+    -ms-touch-action: pan-y;
+  }
+
+  input[type="range"]:focus + .rangeslider .rangeslider__handle {
+    box-shadow: 0 0 8px rgba(255, 0, 255, 0.9);
+  }
+
 }

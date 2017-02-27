@@ -1,5 +1,5 @@
 import 'file-loader?name=rangeslider.css!./rangeslider.css'
-import 'file-loader?name=rangeslider.min.js!./rangeslider.min.js'
+import 'file-loader?name=rangeslider.min.js!./rangeslider.js'
 
 import './batman.scss'
 import {BatmanFlightView} from './batman-flight-view'
@@ -122,15 +122,45 @@ export class Batman {
 
     initTimeSliderStartAndStop(domNode) {
         let $time_controls = $('<div class="kio-batman-time-controls">');
-        let playPause = Batman.button('>');
-        let toStart = Batman.button('|<');
 
         let $slider = $('<input type="range" min="10" max="1000" step="10" value="300">');
-        $slider.rangeslider();
+        $time_controls.append($slider);
 
-        $time_controls.append(playPause, toStart, $slider);
+        let $buttons_container = $('<div class="buttons-container">');
+
+        let playPause = Batman.button('>');
+        let toStart = Batman.button('|<');
+        $buttons_container.append(toStart, playPause);
+        $time_controls.append($buttons_container);
+
+        /*let $span_left = $('<span class="slider-container">');
+        let $span_right = $('<span class="buttons-container">');
+
+        $time_controls.append($span_left, $span_right);
+
+        //fill span_right with buttons
+        let playPause = Batman.button('>');
+        let toStart = Batman.button('|<');
+        $span_right.append(toStart, playPause);
+
+        // $slider.change(e => console.debug('slider change', $slider.val()));
+        // $slider.on('input', e => console.debug('slider input', $slider.val()));
+        $span_left.append($slider);
+        */
 
         domNode.appendChild($time_controls.get(0));
+
+        $slider.rangeslider({
+            polyfill: false,
+
+            onSlide(position, value) {
+                // console.debug('on slide', position, value);
+            },
+
+            onSlideEnd(position, value) {
+                // console.debug('on slide end', position, value);
+            }
+        });
     }
 
     InitParamsSelector(domNode) {
@@ -209,8 +239,11 @@ export class Batman {
 
     static button(title) {
         let d = document.createElement('button');
+
         d.innerText = title;
         d.className = 'kio-base-control-button';
+
+        return d;
     }
 }
 //в перескопах увидят войну ...
