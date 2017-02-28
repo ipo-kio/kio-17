@@ -1,5 +1,7 @@
 @import './list_of_elements.scss';
 
+$sans-serif-fonts: Verdata, sans-serif;
+
 .kio-batman-canvas {
   display: block;
   margin: 0 auto;
@@ -19,6 +21,27 @@
 .kio-batman-time-controls {
 
   width: 100%;
+  font-family: $sans-serif-fonts;
+  font-weight: bold;
+
+  .buttons-and-time-container {
+    position: relative;
+    text-align: center;
+    .buttons-container {
+      display: inline-block;
+    }
+
+    .time-info {
+      position: absolute;
+      bottom: 0;
+      margin-left: 1em;
+    }
+  }
+
+  .range-container {
+    height: 18px;
+    padding: 9px 0 0 0;
+  }
 
   .rangeslider,
   .rangeslider__fill {
@@ -62,10 +85,13 @@
     position: absolute;
     width:60px;
     height:18px;
-    background: url(batman-resources/fly1.png) no-repeat;
+    background: url(batman-resources/fly1.png) center no-repeat;
   }
   .rangeslider__handle:active, .rangeslider--active .rangeslider__handle {
-    box-shadow: -1px 0 #fffb37, 0 -1px #fffb37, 1px 0 #fffb37, 0 1px #fffb37;
+    border: 1px solid #ff310f;
+    padding: 4px;
+    margin-left: -5px;
+    margin-top: -5px;
   }
   .rangeslider--horizontal .rangeslider__handle {
     top: -7px;
@@ -76,5 +102,4 @@
   input[type="range"]:focus + .rangeslider .rangeslider__handle {
     box-shadow: 0 0 8px rgba(255, 0, 255, 0.9);
   }
-
 }

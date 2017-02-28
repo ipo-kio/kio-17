@@ -58,6 +58,7 @@ export class Batman {
                 ordering: "minimize",
                 title: "Время до приземления",
                 view(v) {
+                    if (!v) v = 0;
                     if (v > 60) return "> 60 сек.";
                     else return v.toFixed(2);
                 }
@@ -76,14 +77,20 @@ export class Batman {
     //private methods
 
     initInterface(domNode) {
+        this.$time_info = $('.time-info');
+        this.animation_paused = true;
         this.go = () => {
-            requestAnimationFrame(this.go);
+            if (!this.animation_paused)
+                requestAnimationFrame(this.go);
 
             let newTime = new Date().getTime();
             this.time += (newTime - this.prevTime) / 1000;
             this.prevTime = newTime;
 
             this.batman_view.redraw(this.current_path, this.time);
+
+            this.$time_input.val(this.time).change();
+            this.$time_info.text(10);
         };
 
         this.initCanvas(domNode);
@@ -123,44 +130,49 @@ export class Batman {
     initTimeSliderStartAndStop(domNode) {
         let $time_controls = $('<div class="kio-batman-time-controls">');
 
-        let $slider = $('<input type="range" min="10" max="1000" step="10" value="300">');
-        $time_controls.append($slider);
+        let $slider_container = $('<div class="range-container">');
+        let $slider = $('<input type="range" min="0" max="60" step="0.1" value="0">');
+        $slider_container.append($slider);
+        $time_controls.append($slider_container);
 
+        let $buttons_and_time_container = $('<div class="buttons-and-time-container">');
         let $buttons_container = $('<div class="buttons-container">');
 
+        let time_info = $('<span class="time-info">Танечка</span>');
         let playPause = Batman.button('>');
         let toStart = Batman.button('|<');
+        $buttons_and_time_container.append($buttons_container, time_info);
         $buttons_container.append(toStart, playPause);
-        $time_controls.append($buttons_container);
-
-        /*let $span_left = $('<span class="slider-container">');
-        let $span_right = $('<span class="buttons-container">');
-
-        $time_controls.append($span_left, $span_right);
-
-        //fill span_right with buttons
-        let playPause = Batman.button('>');
-        let toStart = Batman.button('|<');
-        $span_right.append(toStart, playPause);
-
-        // $slider.change(e => console.debug('slider change', $slider.val()));
-        // $slider.on('input', e => console.debug('slider input', $slider.val()));
-        $span_left.append($slider);
-        */
+        $time_controls.append($buttons_and_time_container);
 
         domNode.appendChild($time_controls.get(0));
+
+        let batman = this;
 
         $slider.rangeslider({
             polyfill: false,
 
             onSlide(position, value) {
-                // console.debug('on slide', position, value);
-            },
+                // batman.moveToTime(value);
+            }/*,
 
             onSlideEnd(position, value) {
-                // console.debug('on slide end', position, value);
-            }
+                console.debug('on slide end', position, value);
+            }*/
         });
+
+        $(playPause).click(e => {
+            this.animation_paused = !this.animation_paused;
+            if (!this.animation_paused) {
+                this.prevTime = new Date().getTime();
+                requestAnimationFrame(this.go);
+            }
+            playPause.innerText = this.animation_paused ? '>' : '||';
+        });
+
+        $(toStart).click(e => this.moveToTime(0));
+
+        this.$time_input = $slider;
     }
 
     InitParamsSelector(domNode) {
@@ -232,6 +244,7 @@ export class Batman {
     }
 
     moveToTime(time) {
+
         this.prevTime = new Date().getTime();
         this.time = time;
         requestAnimationFrame(this.go);
