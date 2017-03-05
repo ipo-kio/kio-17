@@ -56,6 +56,7 @@ export class ValuesInput {
 
     createSelect(name, options) {
         let selectDom = document.createElement('select');
+        selectDom.name = name;
 
         let ind = 1;
         for (let option of options) {
@@ -127,19 +128,5 @@ export class IntermediateValuesInput extends ValuesInput {
         this.domNode.appendChild(inp1);
         this.domNode.appendChild(sp2);
         this.domNode.appendChild(inp2);
-    }
-
-    createSelect(name, options) {
-        let selectDom = document.createElement('select');
-
-        for (let option of options) {
-            let op_element = document.createElement('option');
-            op_element.innerText = option;
-            selectDom.appendChild(op_element);
-        }
-
-        this.name2input[name] = selectDom;
-
-        return selectDom;
     }
 }

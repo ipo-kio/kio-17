@@ -23,11 +23,14 @@ import {g, HILL_HEIGHT, get_pose} from './consts'
  */
 
 export class Path {
-    constructor({v0, theta0, x0, y0}, {B0, C0, tmax, dt}, actions) {
+    constructor({v0, theta0, x0, y0}, {pose0, tmax, dt}, actions) {
         let t0 = 0;
+        let {B: B0, C: C0} = get_pose(pose0);
 
         this.t_series = new TimeSeries(0, tmax, dt);
+        this.pose0 = pose0;
         this.actions = actions;
+        this.poses_array = new Array(this.t_series.length);
 
         for (let i = 0; i <= actions.length; i++) {
             let t1 = i == actions.length ? tmax : actions[i].o.next_time;
@@ -44,8 +47,10 @@ export class Path {
             //console.assert(t1_ind - t0_ind + 1 == ts.length);
 
             //copy from ts to this.t_series
-            for (let i = t0_ind; i <= t1_ind; i++)
+            for (let i = t0_ind; i <= t1_ind; i++) {
                 this.t_series.points[i] = ts.points[i - t0_ind];
+                this.poses_array[i] = pose0;
+            }
 
             t0 = t1;
             v0 = this.v(t1_ind);
@@ -54,11 +59,13 @@ export class Path {
             y0 = this.y(t1_ind);
 
             if (i < actions.length) {
-                ({B:B0, C:C0} = get_pose(actions[i].o.next_pose))
+                pose0 = actions[i].o.next_pose;
+                ({B:B0, C:C0} = get_pose(pose0))
             }
         }
 
         this.landing_time = this._eval_landing_time();
+        this.efficient_max_time = Math.min(this.landing_time, tmax);
     }
 
     get_ode(B, C, dt) {
@@ -95,6 +102,10 @@ export class Path {
 
     y(i) {
         return this.t_series.points[i].vals[3];
+    }
+
+    pose(i) {
+        return this.poses_array[i];
     }
 
     indexByTime(time) {

@@ -1,6 +1,7 @@
-import 'file-loader?name=rangeslider.css!./rangeslider.css'
-import 'file-loader?name=rangeslider.min.js!./rangeslider.js'
+// import 'file-loader?name=rangeslider.css!./rangeslider.css'
+// import 'file-loader?name=rangeslider.min.js!./rangeslider.js'
 
+import {Slider} from './slider'
 import './batman.scss'
 import {BatmanFlightView} from './batman-flight-view'
 import {Path} from './path1'
@@ -24,6 +25,7 @@ export class Batman {
         this.domNode = domNode;
 
         this.initInterface(domNode);
+        this.kioapi.submitResult(this.current_path.result());
     }
 
     preloadManifest() {
@@ -82,24 +84,28 @@ export class Batman {
         this.animation_paused = true;
 
         this.go = () => {
-            if (!this.animation_paused)
-                requestAnimationFrame(this.go);
-
             let newTime = new Date().getTime();
             this.time += (newTime - this.prevTime) / 1000;
             this.prevTime = newTime;
 
+            this.time = Math.min(this.current_path.efficient_max_time, this.time);
+            if (this.time == this.current_path.efficient_max_time)
+                this.setAnimationPause(true);
+
             this.batman_view.redraw(this.current_path, this.time);
 
-            this.$time_input.val(this.time).change();//.trigger("change", { origin: "js-rangeslider-0" });
+            this.$time_input.val(this.time).change();
             this.$time_info.text(this.time.toFixed(1) + ' с');
+
+            if (!this.animation_paused)
+                requestAnimationFrame(this.go);
         };
 
         this.initCanvas(domNode);
 
         this.initTimeSliderStartAndStop(domNode);
 
-        this.InitParamsSelector(domNode);
+        this.initParamsSelector(domNode);
     }
 
     static take_actions_from(elements_list) {
@@ -130,15 +136,18 @@ export class Batman {
     initTimeSliderStartAndStop(domNode) {
         let $time_controls = $('<div class="kio-batman-time-controls">');
 
-        let $slider_container = $('<div class="range-container">');
-        let $slider = $('<input type="range" min="0" max="60" step="0.1" value="0">');
-        $slider_container.append($slider);
-        $time_controls.append($slider_container);
+        //let $slider_container = $('<div class="range-container">');
+        // let $slider = $('<input type="range" min="0" max="60" step="0.1" value="0">');
+        // $slider_container.append($slider);
+        // $time_controls.append($slider_container);
+
+        let slider = new Slider($time_controls.get(0), 0, 60, 20, this.kioapi.getResource('fly1'));
+        $time_controls.append(slider.domNode);
 
         let $buttons_and_time_container = $('<div class="buttons-and-time-container">');
         let $buttons_container = $('<div class="buttons-container">');
 
-        let $time_info = $('<span class="time-info">Танечка</span>');
+        let $time_info = $('<span class="time-info">...</span>');
         let playPause = Batman.button('>');
         let toStart = Batman.button('|<');
         $buttons_and_time_container.append($buttons_container, $time_info);
@@ -147,32 +156,39 @@ export class Batman {
 
         domNode.appendChild($time_controls.get(0));
 
+        this.playPause = playPause;
+
         let batman = this;
 
-        $slider.rangeslider({polyfill: false});
+        // $slider.rangeslider({polyfill: false});
 
-        $(playPause).click(e => {
-            this.animation_paused = !this.animation_paused;
-            if (!this.animation_paused) {
-                this.prevTime = new Date().getTime();
-                requestAnimationFrame(this.go);
-            }
-            playPause.innerText = this.animation_paused ? '>' : '||';
-        });
+        $(playPause).click(e => this.setAnimationPause(!this.animation_paused));
 
         $(toStart).click(e => this.moveToTime(0));
 
-        this.$time_input = $slider;
-        $slider.on('input', (e, call_type) => {
-            // console.log('call type', call_type);
-            // if (call_type !== "timer")
-            this.moveToTime(+$slider.val());
-        });
+        this.$time_input = $(slider);
+        slider.onvaluechange = e => {
+            this.moveToTime(slider.value);
+        };
 
         this.$time_info = $time_info;
+
+        slider.resize();
     }
 
-    InitParamsSelector(domNode) {
+    setAnimationPause(value) {
+        if (this.animation_paused == value)
+            return;
+
+        this.animation_paused = value;
+        if (!this.animation_paused) {
+            this.prevTime = new Date().getTime();
+            requestAnimationFrame(this.go);
+        }
+        this.playPause.innerText = this.animation_paused ? '>' : '||';
+    }
+
+    initParamsSelector(domNode) {
         this.initial_params_values_input = new InitialValuesInput();
         this.initial_params_values_input.values = {
             'initial_theta': 0,
@@ -197,15 +213,13 @@ export class Batman {
         let actions = Batman.take_actions_from(this.actions_list_of_elements.elements_list);
         let initial_params = this.initial_params_values_input.values;
 
-        let initial_pose = get_pose(initial_params.initial_pose);
         this.current_path = new Path({
                 v0: initial_params.initial_v,
                 theta0: initial_params.initial_theta,
                 x0: 0,
                 y0: 0
             }, {
-                B0: initial_pose.B,
-                C0: initial_pose.C,
+                pose0: initial_params.initial_pose,
                 tmax: 60,
                 dt: 0.01
             },
@@ -213,6 +227,7 @@ export class Batman {
         );
 
         this.moveToTime(0);
+        this.kioapi.submitResult(this.current_path.result());
     }
 
     moveToTime(time) {

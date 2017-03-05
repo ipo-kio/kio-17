@@ -11,6 +11,10 @@ export class BatmanFlightView {
         this.pixel_size = pixel_size;
 
         this.kioapi = kioapi;
+
+        this.fly2 = this.kioapi.getResource('fly2');
+        this.fly2w = this.fly2.width;
+        this.fly2h = this.fly2.height / 3;
     }
 
     redraw(path, time) {
@@ -27,7 +31,7 @@ export class BatmanFlightView {
         this.drawBatman(ctx, this.local2canvas({
             x: path.x(pos),
             y: path.y(pos)
-        }), path.theta(pos));
+        }), path.theta(pos), path.pose(pos));
     }
 
     drawSky(ctx) {
@@ -44,12 +48,19 @@ export class BatmanFlightView {
         ctx.fillRect(zero_x, zero_y + hill_height, a_lot, a_lot);
     }
 
-    drawBatman(ctx, {x, y}, phi) {
-        let fly1 = this.kioapi.getResource('fly1');
+    drawBatman(ctx, {x, y}, theta, pose) {
         ctx.save();
         ctx.translate(x, y);
-        ctx.rotate(-phi);
-        ctx.drawImage(fly1, -fly1.width / 2, -fly1.height / 2);
+        ctx.rotate(-theta);
+
+        ctx.drawImage(
+            this.fly2,
+            0, (pose - 1) * this.fly2h,
+            this.fly2w, this.fly2h,
+            -this.fly2w / 2, -this.fly2h / 2,
+            this.fly2w, this.fly2h
+        );
+
         ctx.restore();
     }
 
