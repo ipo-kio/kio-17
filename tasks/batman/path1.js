@@ -1,12 +1,19 @@
-import {ODE, TimeSeries, Point} from './ode_solver.js'
-import {g, HILL_HEIGHT} from './consts'
+import {ODE, TimeSeries} from './ode_solver.js'
+import {g, HILL_HEIGHT, get_pose} from './consts'
 
 /**
  * T = theta
- * dv/dt = -g sin T - C v^2
- * dT/dt = 1/v(B v^2 - g cos T)
+ * F = phi
+ * f = F'
+ * dv/dt = -g sin T - C[T-F, a] v^2           C0 - C1*cos(2(t-f))
+ * dT/dt = 1/v(B[T-F, a] v^2 - g cos T)       B0*sin(2(t-f))
  * dx/dt = v cos T
  * dy/dt = v sin T
+ * dF/dt = f
+ * df/dt = M(a)
+ *
+ * B = B0 * a * sin(2(T - F))
+ * C = a * (C0 - C1 * cos(2*(T-F)))
  *
  * v^2 = -g sinT / C
  * v^2 = g cosT / B
@@ -17,14 +24,17 @@ import {g, HILL_HEIGHT} from './consts'
 
 export class Path {
     constructor({v0, theta0, x0, y0}, {B0, C0, tmax, dt}, actions) {
-        let n = Math.round(tmax / dt);
         let t0 = 0;
 
         this.t_series = new TimeSeries(0, tmax, dt);
         this.actions = actions;
 
         for (let i = 0; i <= actions.length; i++) {
-            let t1 = i == actions.length ? tmax : actions[i].time;
+            let t1 = i == actions.length ? tmax : actions[i].o.next_time;
+
+            if (t1 <= t0)
+                continue;
+
             let ode = this.get_ode(B0, C0, dt);
             let ts = ode.solve(t0, t1, v0, theta0, x0, y0);
 
@@ -44,8 +54,7 @@ export class Path {
             y0 = this.y(t1_ind);
 
             if (i < actions.length) {
-                B0 = actions[i].B;
-                C0 = actions[i].C;
+                ({B:B0, C:C0} = get_pose(actions[i].o.next_pose))
             }
         }
 
@@ -53,10 +62,10 @@ export class Path {
     }
 
     get_ode(B, C, dt) {
-        let dv_dt = (t, v, theta, x, y) => -g * Math.sin(theta) - C * v * v;
-        let dtheta_dt = (t, v, theta, x, y) => B * v - g * Math.cos(theta) / v;
-        let dx_dt = (t, v, theta, x, y) => v * Math.cos(theta);
-        let dy_dt = (t, v, theta, x, y) => v * Math.sin(theta);
+        let dv_dt = (t, v, theta, x, y, phi, phidt) => -g * Math.sin(theta) - C * v * v;
+        let dtheta_dt = (t, v, theta, x, y, phi, phidt) => B * v - g * Math.cos(theta) / v;
+        let dx_dt = (t, v, theta, x, y, phi, phidt) => v * Math.cos(theta);
+        let dy_dt = (t, v, theta, x, y, phi, phidt) => v * Math.sin(theta);
 
         let ode = new ODE(dv_dt, dtheta_dt, dx_dt, dy_dt);
         ode.nh = dt;

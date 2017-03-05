@@ -27,7 +27,7 @@ export class BatmanFlightView {
         this.drawBatman(ctx, this.local2canvas({
             x: path.x(pos),
             y: path.y(pos)
-        }), path.phi(pos));
+        }), path.theta(pos));
     }
 
     drawSky(ctx) {
@@ -83,7 +83,7 @@ export class BatmanFlightView {
         ctx.fillStyle = '#fffb37';
 
         for (let action of actions) {
-            let time = action.o.t;
+            let time = action.o.next_time;
             let ind = path.indexByTime(time);
             let {x, y} = this.local2canvas({x: path.x(ind), y: path.y(ind)});
             ctx.beginPath();

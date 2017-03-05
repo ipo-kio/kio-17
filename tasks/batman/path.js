@@ -41,7 +41,7 @@ export class Path {
             let t0_ind = this.t_series.indexByX(t0);
             let t1_ind = this.t_series.indexByX(t1);
 
-            console.assert(t1_ind - t0_ind + 1 == ts.length);
+            //console.assert(t1_ind - t0_ind + 1 == ts.length);
 
             //copy from ts to this.t_series
             for (let i = t0_ind; i <= t1_ind; i++)

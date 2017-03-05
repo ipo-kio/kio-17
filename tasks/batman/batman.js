@@ -3,10 +3,11 @@ import 'file-loader?name=rangeslider.min.js!./rangeslider.js'
 
 import './batman.scss'
 import {BatmanFlightView} from './batman-flight-view'
-import {Path} from './path'
+import {Path} from './path1'
 import {BatmanAction} from './batman_action'
-import {ValuesInput} from './values_input'
+import {InitialValuesInput, IntermediateValuesInput} from './values_input'
 import {ListOfElements} from './list_of_elements'
+import {get_pose} from './consts'
 
 export class Batman {
 
@@ -27,7 +28,8 @@ export class Batman {
 
     preloadManifest() {
         return [
-            {id: "fly1", src: "batman-resources/fly1.png"}
+            {id: "fly1", src: "batman-resources/fly1.png"},
+            {id: "fly2", src: "batman-resources/fly2.png"}
         ];
     }
 
@@ -77,8 +79,8 @@ export class Batman {
     //private methods
 
     initInterface(domNode) {
-        this.$time_info = $('.time-info');
         this.animation_paused = true;
+
         this.go = () => {
             if (!this.animation_paused)
                 requestAnimationFrame(this.go);
@@ -89,8 +91,8 @@ export class Batman {
 
             this.batman_view.redraw(this.current_path, this.time);
 
-            this.$time_input.val(this.time).change();
-            this.$time_info.text(10);
+            this.$time_input.val(this.time).change();//.trigger("change", { origin: "js-rangeslider-0" });
+            this.$time_info.text(this.time.toFixed(1) + ' с');
         };
 
         this.initCanvas(domNode);
@@ -98,8 +100,6 @@ export class Batman {
         this.initTimeSliderStartAndStop(domNode);
 
         this.InitParamsSelector(domNode);
-
-        this.initEvalButton(domNode);
     }
 
     static take_actions_from(elements_list) {
@@ -138,10 +138,10 @@ export class Batman {
         let $buttons_and_time_container = $('<div class="buttons-and-time-container">');
         let $buttons_container = $('<div class="buttons-container">');
 
-        let time_info = $('<span class="time-info">Танечка</span>');
+        let $time_info = $('<span class="time-info">Танечка</span>');
         let playPause = Batman.button('>');
         let toStart = Batman.button('|<');
-        $buttons_and_time_container.append($buttons_container, time_info);
+        $buttons_and_time_container.append($buttons_container, $time_info);
         $buttons_container.append(toStart, playPause);
         $time_controls.append($buttons_and_time_container);
 
@@ -149,17 +149,7 @@ export class Batman {
 
         let batman = this;
 
-        $slider.rangeslider({
-            polyfill: false,
-
-            onSlide(position, value) {
-                // batman.moveToTime(value);
-            }/*,
-
-            onSlideEnd(position, value) {
-                console.debug('on slide end', position, value);
-            }*/
-        });
+        $slider.rangeslider({polyfill: false});
 
         $(playPause).click(e => {
             this.animation_paused = !this.animation_paused;
@@ -173,78 +163,59 @@ export class Batman {
         $(toStart).click(e => this.moveToTime(0));
 
         this.$time_input = $slider;
+        $slider.on('input', (e, call_type) => {
+            // console.log('call type', call_type);
+            // if (call_type !== "timer")
+            this.moveToTime(+$slider.val());
+        });
+
+        this.$time_info = $time_info;
     }
 
     InitParamsSelector(domNode) {
-        this.initial_params = [{
-            name: 'v0',
-            title: 'v'
-        }, {
-            name: 'theta0',
-            title: 'θ'
-        }, {
-            name: 'phi0',
-            title: 'φ'
-        }, {
-            name: 'phidt0',
-            title: "φ'"
-        }];
-
-        this.intermediate_action_params = [{
-            name: 'B0',
-            title: 'B0'
-        }, {
-            name: 'C0',
-            title: 'C0'
-        }, {
-            name: 'C1',
-            title: 'C1'
-        }, {
-            name: 'M',
-            title: 'M'
-        }];
-
-        this.initial_params_values_input = new ValuesInput(
-            ...this.initial_params, ...this.intermediate_action_params
-        );
+        this.initial_params_values_input = new InitialValuesInput();
+        this.initial_params_values_input.values = {
+            'initial_theta': 0,
+            'initial_v': 20,
+            'initial_pos': 1
+        };
+        this.initial_params_values_input.change_handler = this.userChangedInput.bind(this);
 
         domNode.appendChild(this.initial_params_values_input.domNode);
 
         this.actions_list_of_elements = new ListOfElements(() => {
-            return new ValuesInput({
-                name: 't',
-                title: 't'
-            }, ...this.intermediate_action_params);
+            let ivi = new IntermediateValuesInput();
+            ivi.change_handler = this.userChangedInput.bind(this);
+            return ivi;
         }, []);
         domNode.appendChild(this.actions_list_of_elements.domNode);
+
+        this.userChangedInput();
     }
 
+    userChangedInput() {
+        let actions = Batman.take_actions_from(this.actions_list_of_elements.elements_list);
+        let initial_params = this.initial_params_values_input.values;
 
-    initEvalButton(domNode) {
-        let evalButton = Batman.button('Eval');
-        $(evalButton).click(e => {
-            let actions = Batman.take_actions_from(this.actions_list_of_elements.elements_list);
-
-            this.current_path = new Path({
-                ...this.initial_params_values_input.values,
+        let initial_pose = get_pose(initial_params.initial_pose);
+        this.current_path = new Path({
+                v0: initial_params.initial_v,
+                theta0: initial_params.initial_theta,
                 x0: 0,
                 y0: 0
             }, {
-                ...this.initial_params_values_input.values,
+                B0: initial_pose.B,
+                C0: initial_pose.C,
                 tmax: 60,
                 dt: 0.01
-            }, actions);
+            },
+            actions
+        );
 
-            this.moveToTime(0);
-        });
-
-        $(evalButton).click();
-
-        domNode.appendChild(evalButton);
+        this.moveToTime(0);
     }
 
     moveToTime(time) {
-
         this.prevTime = new Date().getTime();
         this.time = time;
         requestAnimationFrame(this.go);
