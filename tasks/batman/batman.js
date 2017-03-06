@@ -94,7 +94,7 @@ export class Batman {
 
             this.batman_view.redraw(this.current_path, this.time);
 
-            this.$time_input.val(this.time).change();
+            this.time_input.value_no_fire = this.time;
             this.$time_info.text(this.time.toFixed(1) + ' с');
 
             if (!this.animation_paused)
@@ -106,6 +106,8 @@ export class Batman {
         this.initTimeSliderStartAndStop(domNode);
 
         this.initParamsSelector(domNode);
+
+        this.time_input.resize();
     }
 
     static take_actions_from(elements_list) {
@@ -166,14 +168,12 @@ export class Batman {
 
         $(toStart).click(e => this.moveToTime(0));
 
-        this.$time_input = $(slider);
+        this.time_input = slider;
         slider.onvaluechange = e => {
             this.moveToTime(slider.value);
         };
 
         this.$time_info = $time_info;
-
-        slider.resize();
     }
 
     setAnimationPause(value) {
@@ -232,7 +232,7 @@ export class Batman {
 
     moveToTime(time) {
         this.prevTime = new Date().getTime();
-        this.time = time;
+        this.time = Math.min(time, this.current_path.landing_time);
         requestAnimationFrame(this.go);
     }
 

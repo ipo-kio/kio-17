@@ -11,18 +11,29 @@ export class Slider {
         this.img = img;
 
         this.canvas.height = height;
-        this.resize();
-        $(window).on('resize', this.resize.bind(this));
-
-        this.isDown = false;
+        $(window).resize(this.resize.bind(this));
 
         this.redraw();
 
         $canvas
-            .on('mousedown', this.handleMouseDown.bind(this))
-            .on('mousemove', this.handleMouseMove.bind(this))
-            .on('mouseup', this.handleMouseUpOut.bind(this));
-            // .on('mouseout', this.handleMouseUpOut.bind(this));
+            .on('mousedown', this.handleMouseDown.bind(this));
+
+        this.window_move = e => {
+            // tell the browser we're handling this event
+            e.preventDefault();
+            e.stopPropagation();
+            // get mouse position
+            let {x, y} = this.event2point(e);
+            // set new thumb & redraw
+
+            this.value = this.position_2_value(x - this.dx);
+            this.redraw();
+        };
+
+        this.window_up = e => {
+            if (e.button == 0)
+                this.setup_waiting_mouse_up(false);
+        };
 
         this.value = min_value;
     }
@@ -31,7 +42,7 @@ export class Slider {
         return this._value;
     }
 
-    set value(value) {
+    set value_no_fire(value) {
         if (value < this.min_value)
             value = this.min_value;
         if (value > this.max_value)
@@ -39,13 +50,17 @@ export class Slider {
         if (this._value == value)
             return;
         this._value = value;
-        if (this.onvaluechange)
-            this.onvaluechange({});
         this.redraw();
     }
 
-    resize() {
-        this.canvas.width = $(this.outer).width();
+    set value(value) {
+        this.value_no_fire = value;
+        if (this.onvaluechange)
+            this.onvaluechange({});
+    }
+
+    resize(width) {
+        this.canvas.width = width ? width : $(this.outer).width();
         this.redraw();
     }
 
@@ -70,20 +85,48 @@ export class Slider {
         ctx.stroke();
 
         //thumb
+
+        let tr = this.thumb_rect;
+        ctx.drawImage(this.img, tr.x, tr.y);
+    }
+
+    get thumb_rect() {
         let w = this.canvas.width - this.img.width;
         let xx = w * (this.value - this.min_value) / (this.max_value - this.min_value);
-
-        this.thumb_rect = {
+        return {
             x: xx,
             y: this.canvas.height / 2 - this.img.height / 2,
             w: this.img.width,
             h: this.img.height
         };
+    }
 
-        ctx.drawImage(this.img, this.thumb_rect.x, this.thumb_rect.y);
+    static point_in_thumb({x, y}, thumb_rect) {
+        return x >= thumb_rect.x && x <= thumb_rect.x + thumb_rect.w && y >= thumb_rect.y && y <= thumb_rect.y + thumb_rect.h;
+    }
+
+    position_2_value(x) {
+        x -= this.img.width / 2;
+        let w = this.canvas.width - this.img.width;
+        return x * (this.max_value - this.min_value) / w + this.min_value;
+        //x = w * (this.value - this.min_value) / (this.max_value - this.min_value);
+    }
+
+    setup_waiting_mouse_up(on) {
+        if (on)
+            $(window)
+                .on('mousemove', this.window_move)
+                .on('mouseup', this.window_up);
+        else
+            $(window)
+                .off('mousemove', this.window_move)
+                .off('mouseup', this.window_up);
     }
 
     handleMouseDown(e) {
+        if (e.button != 0)
+            return;
+
         // tell the browser we're handling this event
         e.preventDefault();
         e.stopPropagation();
@@ -92,32 +135,13 @@ export class Slider {
         // test for possible start of dragging
         let tr = this.thumb_rect;
 
-        this.isDown = tr && x > tr.x && x < tr.x + tr.w && y > tr.y && y < tr.y + tr.h;
-        this.dx = x - tr.x;
-    }
+        if (Slider.point_in_thumb({x, y}, tr)) {
+            this.dx = x - tr.x - this.img.width / 2;
+        } else {
+            this.value = this.position_2_value(x);
+            this.dx = 0;
+        }
 
-    handleMouseUpOut(e) {
-        // tell the browser we're handling this event
-        e.preventDefault();
-        e.stopPropagation();
-        // stop dragging
-        this.isDown = false;
-    }
-
-    handleMouseMove(e) {
-        if (e.buttons % 2 == 0)
-            return;
-
-        // tell the browser we're handling this event
-        e.preventDefault();
-        e.stopPropagation();
-        // get mouse position
-        let {x, y} = this.event2point(e);
-        // set new thumb & redraw
-
-        let w = this.canvas.width - this.img.width;
-        this.value = (x - this.dx) * (this.max_value - this.min_value) / w + this.min_value;
-        //x - this.dx = w * (this.value - this.min_value) / (this.max_value - this.min_value);
-        this.redraw();
+        this.setup_waiting_mouse_up(true);
     }
 }
