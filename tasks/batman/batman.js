@@ -1,6 +1,3 @@
-// import 'file-loader?name=rangeslider.css!./rangeslider.css'
-// import 'file-loader?name=rangeslider.min.js!./rangeslider.js'
-
 import {Slider} from './slider'
 import './batman.scss'
 import {BatmanFlightView} from './batman-flight-view'
@@ -31,7 +28,9 @@ export class Batman {
     preloadManifest() {
         return [
             {id: "fly1", src: "batman-resources/fly1.png"},
-            {id: "fly2", src: "batman-resources/fly2.png"}
+            {id: "fly2", src: "batman-resources/fly2.png"},
+            {id: "grass", src: "batman-resources/grass.jpg"},
+            {id: "bg", src: "batman-resources/bg.png"}
         ];
     }
 
@@ -59,7 +58,7 @@ export class Batman {
             },
             {
                 name: "landing_time",
-                ordering: "minimize",
+                ordering: "maximize",
                 title: "Время до приземления",
                 view(v) {
                     if (!v) v = 0;
@@ -71,11 +70,34 @@ export class Batman {
     }
 
     solution() {
-        return this.current_path.result();
+        let {v0, theta0, pose0} = this.current_path.solution;
+        let actions = this.current_path.actions;
+
+        let a = [];
+        for (let action of actions)
+            a.push({t: action.o.next_time, p:action.o.next_pose});
+
+        return {v0, t0:theta0, p0:pose0, a}
     }
 
     loadSolution(solution) {
-        this.kioapi.submitResult(this.current_path.result());
+        if (!solution)
+            return;
+
+        this.initial_params_values_input.values = {
+            'initial_theta': Math.round(solution.t0 * 180 / Math.PI),
+            'initial_v': solution.v0,
+            'initial_pose': solution.p0
+        };
+
+        this.actions_list_of_elements.clear_elements();
+        for (let action of solution.a) {
+           let ivi = this.createIntermediateValues();
+           ivi.values = {next_time: action.t, next_pose: action.p};
+            this.actions_list_of_elements.add_element(ivi);
+        }
+
+        this.userChangedInput();
     }
 
     //private methods
@@ -107,7 +129,7 @@ export class Batman {
 
         this.initParamsSelector(domNode);
 
-        this.time_input.resize();
+        this.full_resize();
     }
 
     static take_actions_from(elements_list) {
@@ -192,30 +214,51 @@ export class Batman {
         this.initial_params_values_input = new InitialValuesInput();
         this.initial_params_values_input.values = {
             'initial_theta': 0,
-            'initial_v': 20,
-            'initial_pos': 1
+            'initial_v': 10,
+            'initial_pose': 1
         };
         this.initial_params_values_input.change_handler = this.userChangedInput.bind(this);
 
         domNode.appendChild(this.initial_params_values_input.domNode);
 
-        this.actions_list_of_elements = new ListOfElements(() => {
-            let ivi = new IntermediateValuesInput();
-            ivi.change_handler = this.userChangedInput.bind(this);
-            return ivi;
-        }, []);
+        this.actions_list_of_elements = new ListOfElements(() => this.createIntermediateValues(), [], 'добавить действие', 'удалить действие');
+        this.actions_list_of_elements.add_remove_extra_action = () => {
+            this.full_resize();
+            this.userChangedInput();
+        };
         domNode.appendChild(this.actions_list_of_elements.domNode);
 
         this.userChangedInput();
+    }
+
+    createIntermediateValues() {
+        let ivi = new IntermediateValuesInput();
+        ivi.change_handler = this.userChangedInput.bind(this);
+        return ivi;
+    }
+
+    full_resize() {
+        this.batman_view.resize();
+        this.time_input.resize();
     }
 
     userChangedInput() {
         let actions = Batman.take_actions_from(this.actions_list_of_elements.elements_list);
         let initial_params = this.initial_params_values_input.values;
 
+        let theta0 = initial_params.initial_theta * Math.PI / 180;
+        if (theta0 > Math.PI / 3)
+            theta0 = Math.PI / 3;
+        if (theta0 < -Math.PI / 3)
+            theta0 = -Math.PI / 3;
+
+        let v0 = initial_params.initial_v;
+        if (v0 < 1) v0 = 1;
+        if (v0 > 20) v0 = 20;
+
         this.current_path = new Path({
-                v0: initial_params.initial_v,
-                theta0: initial_params.initial_theta,
+                v0,
+                theta0,
                 x0: 0,
                 y0: 0
             }, {
@@ -225,6 +268,8 @@ export class Batman {
             },
             actions
         );
+
+        this.time_input.visible_max_value = this.current_path.landing_time;
 
         this.moveToTime(0);
         this.kioapi.submitResult(this.current_path.result());
@@ -246,3 +291,6 @@ export class Batman {
     }
 }
 //в перескопах увидят войну ...
+
+//TODO добавить отсчеты на слайдер
+//TODO показывать конец слайдера

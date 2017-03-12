@@ -1,5 +1,5 @@
 export class Slider {
-    constructor(outer, min_value, max_value, height, img) {
+    constructor(outer, min_value, max_value, height, img, ticks, big_ticks) {
         this.min_value = min_value;
         this.max_value = max_value;
 
@@ -11,12 +11,17 @@ export class Slider {
         this.img = img;
 
         this.canvas.height = height;
-        $(window).resize(this.resize.bind(this));
+        $(window).on('resize', this.resize.bind(this));
 
         this.redraw();
 
         $canvas
-            .on('mousedown', this.handleMouseDown.bind(this));
+            .on('mousedown', this.handleMouseDown.bind(this))
+            .on('mousemove', this.handleMouseMove.bind(this))
+            .on('mouseleave', e => {
+                this.is_over = false;
+                this.redraw();
+            });
 
         this.window_move = e => {
             // tell the browser we're handling this event
@@ -36,6 +41,11 @@ export class Slider {
         };
 
         this.value = min_value;
+    }
+
+    set visible_max_value(value) {
+        this._visible_max_value = value;
+        this.redraw();
     }
 
     get value() {
@@ -59,8 +69,8 @@ export class Slider {
             this.onvaluechange({});
     }
 
-    resize(width) {
-        this.canvas.width = width ? width : $(this.outer).width();
+    resize() {
+        this.canvas.width = $(this.outer).width();
         this.redraw();
     }
 
@@ -81,18 +91,40 @@ export class Slider {
         ctx.beginPath();
         ctx.moveTo(0, this.canvas.height / 2);
         ctx.lineTo(this.canvas.width, this.canvas.height / 2);
-        ctx.strokeStyle = 'black';
+        ctx.strokeStyle = '#4faa04';
         ctx.stroke();
+
+        let xx = this.value_2_pos(this._visible_max_value) + this.img.width / 2;
+        if (xx >= 0 && xx <= this.canvas.width) {
+            ctx.strokeStyle = '#905c01';
+            ctx.beginPath();
+            ctx.moveTo(xx, this.canvas.height / 2);
+            ctx.lineTo(this.canvas.width, this.canvas.height / 2);
+            ctx.stroke();
+        }
 
         //thumb
 
         let tr = this.thumb_rect;
+
+        if (this.is_over) {
+            ctx.fillStyle = 'rgba(100, 200, 0, 0.5)';
+            ctx.fillRect(tr.x, tr.y, tr.w, tr.h);
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = '#ffe722';
+            ctx.strokeRect(tr.x - 2, tr.y, tr.w + 4, tr.h);
+        }
+
         ctx.drawImage(this.img, tr.x, tr.y);
     }
 
-    get thumb_rect() {
+    value_2_pos(value) {
         let w = this.canvas.width - this.img.width;
-        let xx = w * (this.value - this.min_value) / (this.max_value - this.min_value);
+        return w * (value - this.min_value) / (this.max_value - this.min_value);
+    }
+
+    get thumb_rect() {
+        let xx = this.value_2_pos(this.value);
         return {
             x: xx,
             y: this.canvas.height / 2 - this.img.height / 2,
@@ -143,5 +175,10 @@ export class Slider {
         }
 
         this.setup_waiting_mouse_up(true);
+    }
+
+    handleMouseMove(e) {
+        this.is_over = Slider.point_in_thumb(this.event2point(e), this.thumb_rect);
+        this.redraw();
     }
 }

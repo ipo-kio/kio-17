@@ -27,13 +27,16 @@ export class Path {
         let t0 = 0;
         let {B: B0, C: C0} = get_pose(pose0);
 
+        let sorted_actions = actions.slice().sort((a1, a2) => a1.o.next_time - a2.o.next_time);
+
         this.t_series = new TimeSeries(0, tmax, dt);
         this.pose0 = pose0;
+        this.solution = {v0, theta0, pose0};
         this.actions = actions;
         this.poses_array = new Array(this.t_series.length);
 
-        for (let i = 0; i <= actions.length; i++) {
-            let t1 = i == actions.length ? tmax : actions[i].o.next_time;
+        for (let i = 0; i <= sorted_actions.length; i++) {
+            let t1 = i == sorted_actions.length ? tmax : sorted_actions[i].o.next_time;
 
             if (t1 <= t0)
                 continue;
@@ -58,14 +61,15 @@ export class Path {
             x0 = this.x(t1_ind);
             y0 = this.y(t1_ind);
 
-            if (i < actions.length) {
-                pose0 = actions[i].o.next_pose;
+            if (i < sorted_actions.length) {
+                pose0 = sorted_actions[i].o.next_pose;
                 ({B:B0, C:C0} = get_pose(pose0))
             }
         }
 
         this.landing_time = this._eval_landing_time();
         this.efficient_max_time = Math.min(this.landing_time, tmax);
+        this.loops = this._eval_loops();
     }
 
     get_ode(B, C, dt) {
@@ -121,10 +125,16 @@ export class Path {
         return 100500;
     }
 
+    _eval_loops() {
+        let pos = this.indexByTime(this.efficient_max_time);
+        let dtheta = this.theta(pos) - this.theta(0);
+        return Math.abs(Math.round(dtheta / (2 * Math.PI)));
+    }
+
     result() {
         return {
             landing_time: this.landing_time,
-            loops: 1
+            loops: this.loops
         }
     }
 }

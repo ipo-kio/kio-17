@@ -15,9 +15,17 @@ export class BatmanFlightView {
         this.fly2 = this.kioapi.getResource('fly2');
         this.fly2w = this.fly2.width;
         this.fly2h = this.fly2.height / 3;
+
+        $(window).on('resize', () => this.resize());
     }
 
     redraw(path, time) {
+        this.last_redraw_path = path;
+        this.last_redraw_time = time;
+
+        let pos = path.indexByTime(time);
+        this.position_camera(path.x(pos), path.y(pos));
+
         let ctx = this.canvas.getContext('2d');
 
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -27,7 +35,6 @@ export class BatmanFlightView {
         this.drawPath(ctx, path);
         this.drawActions(ctx, path);
 
-        let pos = path.indexByTime(time);
         this.drawBatman(ctx, this.local2canvas({
             x: path.x(pos),
             y: path.y(pos)
@@ -40,7 +47,7 @@ export class BatmanFlightView {
     }
 
     drawGround(ctx) {
-        ctx.fillStyle = "#9b512f";
+        ctx.fillStyle = ctx.createPattern(this.kioapi.getResource('grass'), 'repeat');
         let {x: zero_x, y: zero_y} = this.local2canvas({x: 0, y: 0});
         let hill_height = this.local_length2canvas(HILL_HEIGHT);
         let a_lot = this.local_length2canvas(1000);
@@ -81,7 +88,7 @@ export class BatmanFlightView {
         }
 
         ctx.strokeStyle = "#00fb37";
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 2;
         ctx.stroke();
 
         ctx.restore();
@@ -105,11 +112,35 @@ export class BatmanFlightView {
         ctx.restore();
     }
 
+    resize() {
+        let w = $(this.canvas.parentNode).width();
+        this.canvas.width = w;
+        if (this.last_redraw_path)
+            this.redraw(this.last_redraw_path, this.last_redraw_time);
+    }
+
     canvas2local({x, y}) {
         return {
             x: this.x_left + this.pixel_size * x,
             y: this.y_top - this.pixel_size * y
         }
+    }
+
+    position_camera(local_batman_x, local_batman_y) {
+        let w = this.canvas.width * this.pixel_size;
+        let h = this.canvas.height * this.pixel_size;
+        let x_left = -w / 2 + local_batman_x;
+        let y_top = h / 2/* + local_batman_y*/;
+
+        let min_g = 10 * this.pixel_size;
+        if (x_left < -min_g)
+            x_left = -min_g;
+
+        if ((y_top + HILL_HEIGHT + min_g) / this.pixel_size < this.canvas.height)
+            y_top = this.canvas.height * this.pixel_size - HILL_HEIGHT - min_g;
+
+        this.x_left = x_left;
+        this.y_top = y_top;
     }
 
     local2canvas({x, y}, round = false) {

@@ -61,7 +61,7 @@ module.exports = function (env) {
             new CopyWebpackPlugin([
                 {from: './tasks/batman/batman.html'},
                 {from: './tasks/batman/*.png', to: './batman-resources', flatten: true},
-                // {from: './tasks/batman/batman.html'}
+                {from: './tasks/batman/*.jpg', to: './batman-resources', flatten: true}
             ])
         ]
     };

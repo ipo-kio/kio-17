@@ -92,7 +92,7 @@ export class InitialValuesInput extends ValuesInput {
         let sp3 = document.createElement('span');
         sp3.innerText = 'м/c в позиции';
 
-        let inp1 = this.createInput('initial_theta', 2);
+        let inp1 = this.createInput('initial_theta', 3);
         let inp2 = this.createInput('initial_v', 3);
         let inp3 = this.createSelect('initial_pose', ['Первая поза', 'Вторая поза', 'Третья поза']);
 
@@ -121,7 +121,7 @@ export class IntermediateValuesInput extends ValuesInput {
         let sp2 = document.createElement('span');
         sp2.innerText = 'изменить позу на';
 
-        let inp1 = this.createInput('next_time', 3);
+        let inp1 = this.createInput('next_time', 4);
         let inp2 = this.createSelect('next_pose', ['Первая поза', 'Вторая поза', 'Третья поза']);
 
         this.domNode.appendChild(sp1);

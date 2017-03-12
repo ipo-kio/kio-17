@@ -1,14 +1,18 @@
 .kio-batman-list-of-elements {
+
+  font-family: $sans-serif-fonts;
+
+  margin-top: 0.4em;
   .item {
-    margin-top: 0.4em;
+    margin: 0.2em 0;
 
     .left {
-      margin-right: 1em;
+      display: inline-block;
     }
 
     .right {
-      width: 1em;
-      float:right;
+      display: inline-block;
+      margin-left: 1em;
     }
   }
 
@@ -18,8 +22,7 @@
 
   a {
     text-decoration: none;
-    font-family: "Courier New", monospace;
-    font-size: 2em;
-    font-weight: bold;
+    color: #3447de;
+    //font-weight: bold;
   }
 }

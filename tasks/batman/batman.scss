@@ -1,10 +1,10 @@
-@import './list_of_elements.scss';
-
 $sans-serif-fonts: Verdata, sans-serif;
+
+@import './list_of_elements.scss';
 
 .kio-batman-canvas {
   display: block;
-  margin: 0 auto;
+  margin: 0;
 }
 
 .kio-batman-values-list {
@@ -19,7 +19,7 @@ $sans-serif-fonts: Verdata, sans-serif;
 }
 
 .kio-batman-initial-values-list, .kio-batman-intermediate-values-list {
-  margin: 0.4em 0 0.4em 1em;
+  margin: 0 0 0 1em;
   font-family: $sans-serif-fonts;
 
   input {
