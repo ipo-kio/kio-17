@@ -65,6 +65,7 @@ export class Path {
                 pose0 = sorted_actions[i].o.next_pose;
                 ({B:B0, C:C0} = get_pose(pose0))
             }
+            // console.log('next point: t, v, theta, B0, C0', t0, v0, theta0, B0, C0);
         }
 
         this.landing_time = this._eval_landing_time();

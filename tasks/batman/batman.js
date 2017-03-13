@@ -28,6 +28,7 @@ export class Batman {
     preloadManifest() {
         return [
             {id: "fly1", src: "batman-resources/fly1.png"},
+            {id: "fly1-hover", src: "batman-resources/fly1_hover.png"},
             {id: "fly2", src: "batman-resources/fly2.png"},
             {id: "ground", src: "batman-resources/ground.png"},
             {id: "roof", src: "batman-resources/roof.png"},
@@ -46,10 +47,10 @@ export class Batman {
                 title: "Приземление за минуту",
                 ordering: 'maximize',
                 normalize: v => {
-                    return v <= 60 ? 1 : 0
+                    return v <= 60 ? 1 : 0;
                 },
                 view(v) {
-                    if (v == 0) return "нет"; else return "да"
+                    if (v > 60) return "нет"; else return "да"
                 }
             },
             {
@@ -91,12 +92,14 @@ export class Batman {
             'initial_pose': solution.p0
         };
 
+        this.actions_list_of_elements.add_remove_extra_action_suspend = true;
         this.actions_list_of_elements.clear_elements();
         for (let action of solution.a) {
            let ivi = this.createIntermediateValues();
            ivi.values = {next_time: action.t, next_pose: action.p};
             this.actions_list_of_elements.add_element(ivi);
         }
+        this.actions_list_of_elements.add_remove_extra_action_suspend = false;
 
         this.userChangedInput();
     }
@@ -129,7 +132,7 @@ export class Batman {
             this.animation_just_started = false;
             this.prevTime = newTime;
 
-            this.batman_view.redraw(this.current_path, this.time, this.time == 0 || this.time == this.current_path.efficient_max_time);
+            this.batman_view.redraw(this.current_path, this.time, this.time == 0 || this.time == this.current_path.landing_time);
 
             this.time_input.value_no_fire = this.time;
             this.$time_info.text(this.time.toFixed(1) + ' с');
@@ -180,15 +183,15 @@ export class Batman {
         // $slider_container.append($slider);
         // $time_controls.append($slider_container);
 
-        let slider = new Slider($time_controls.get(0), 0, 60, 20, this.kioapi.getResource('fly1'));
+        let slider = new Slider($time_controls.get(0), 0, 60, 35/*fly1 height*/, this.kioapi.getResource('fly1'), this.kioapi.getResource('fly1-hover'));
         $time_controls.append(slider.domNode);
 
         let $buttons_and_time_container = $('<div class="buttons-and-time-container">');
         let $buttons_container = $('<div class="buttons-container">');
 
         let $time_info = $('<span class="time-info">...</span>');
-        let playPause = Batman.button('>');
-        let toStart = Batman.button('|<');
+        let playPause = Batman.button('►');
+        let toStart = Batman.button('⏪');
         $buttons_and_time_container.append($buttons_container, $time_info);
         $buttons_container.append(toStart, playPause);
         $time_controls.append($buttons_and_time_container);
@@ -220,7 +223,7 @@ export class Batman {
         this.animation_paused = value;
         if (!this.animation_paused)
             this.startAnimation();
-        this.playPause.innerText = this.animation_paused ? '>' : '||';
+        this.playPause.innerText = this.animation_paused ? '►' : '▮▮';
     }
 
     initParamsSelector(domNode) {
@@ -277,7 +280,7 @@ export class Batman {
             }, {
                 pose0: initial_params.initial_pose,
                 tmax: 60,
-                dt: 0.01
+                dt: 0.01 / 10
             },
             actions
         );

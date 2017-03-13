@@ -1,5 +1,5 @@
 export class Slider {
-    constructor(outer, min_value, max_value, height, img, ticks, big_ticks) {
+    constructor(outer, min_value, max_value, height, img, hover_img/*, ticks, big_ticks*/) { //TODO draw ticks
         this.min_value = min_value;
         this.max_value = max_value;
 
@@ -9,6 +9,7 @@ export class Slider {
         this.canvas = canvas;
         this.domNode = canvas;
         this.img = img;
+        this.hover_img = hover_img;
 
         this.canvas.height = height;
         $(window).on('resize', this.resize.bind(this));
@@ -91,12 +92,12 @@ export class Slider {
         ctx.beginPath();
         ctx.moveTo(0, this.canvas.height / 2);
         ctx.lineTo(this.canvas.width, this.canvas.height / 2);
-        ctx.strokeStyle = '#4faa04';
+        ctx.strokeStyle = '#46aede';
         ctx.stroke();
 
         let xx = this.value_2_pos(this._visible_max_value) + this.img.width / 2;
         if (xx >= 0 && xx <= this.canvas.width) {
-            ctx.strokeStyle = '#905c01';
+            ctx.strokeStyle = '#8f8f8f';
             ctx.beginPath();
             ctx.moveTo(xx, this.canvas.height / 2);
             ctx.lineTo(this.canvas.width, this.canvas.height / 2);
@@ -107,15 +108,15 @@ export class Slider {
 
         let tr = this.thumb_rect;
 
-        if (this.is_over) {
+        /*if (this.is_over) {
             ctx.fillStyle = 'rgba(100, 200, 0, 0.5)';
             ctx.fillRect(tr.x, tr.y, tr.w, tr.h);
             ctx.lineWidth = 1;
             ctx.strokeStyle = '#ffe722';
             ctx.strokeRect(tr.x - 2, tr.y, tr.w + 4, tr.h);
-        }
+        }*/
 
-        ctx.drawImage(this.img, tr.x, tr.y);
+        ctx.drawImage(this.is_over ? this.hover_img : this.img, tr.x, tr.y);
     }
 
     value_2_pos(value) {

@@ -113,7 +113,7 @@ export class BatmanFlightView {
                 break;
         }
 
-        ctx.strokeStyle = "#00fb37";
+        ctx.strokeStyle = "#47fffd";
         ctx.lineWidth = 2;
         ctx.stroke();
 
@@ -124,7 +124,7 @@ export class BatmanFlightView {
         let actions = path.actions;
 
         ctx.save();
-        ctx.fillStyle = '#fffb37';
+        ctx.fillStyle = '#fffc00';
 
         for (let action of actions) {
             let time = action.o.next_time;

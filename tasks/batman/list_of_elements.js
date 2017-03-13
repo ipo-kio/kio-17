@@ -4,6 +4,8 @@ export class ListOfElements {
         this.get_new_element = get_new_element;
         this.remove_element_text = remove_element_text;
 
+        this.add_remove_extra_action_suspend = false;
+
         this.domNode = document.createElement('div');
         this.domNode.className = 'kio-batman-list-of-elements';
 
@@ -37,8 +39,7 @@ export class ListOfElements {
             this.itemsElement.removeChild(this.itemsElement.firstChild);
         }
 
-        if (this.add_remove_extra_action)
-            this.add_remove_extra_action();
+        this.fire_extra_action();
     }
 
     add_element(element) {
@@ -71,11 +72,14 @@ export class ListOfElements {
 
             this.itemsElement.removeChild(outer);
 
-            if (this.add_remove_extra_action)
-                this.add_remove_extra_action();
+            this.fire_extra_action();
         });
 
-        if (this.add_remove_extra_action)
+        this.fire_extra_action();
+    }
+
+    fire_extra_action() {
+        if (this.add_remove_extra_action && !this.add_remove_extra_action_suspend)
             this.add_remove_extra_action();
     }
 }
