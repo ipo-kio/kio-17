@@ -60,8 +60,7 @@ module.exports = function (env) {
             new ExtractTextPlugin("[name].css"),
             new CopyWebpackPlugin([
                 {from: './tasks/batman/batman.html'},
-                {from: './tasks/batman/*.png', to: './batman-resources', flatten: true},
-                {from: './tasks/batman/*.jpg', to: './batman-resources', flatten: true}
+                {from: './tasks/batman/img/*', to: './batman-resources', flatten: true}
             ])
         ]
     };

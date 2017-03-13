@@ -5,7 +5,7 @@ import {Path} from './path1'
 import {BatmanAction} from './batman_action'
 import {InitialValuesInput, IntermediateValuesInput} from './values_input'
 import {ListOfElements} from './list_of_elements'
-import {get_pose} from './consts'
+import {get_pose, PIXEL_SIZE} from './consts'
 
 export class Batman {
 
@@ -29,7 +29,8 @@ export class Batman {
         return [
             {id: "fly1", src: "batman-resources/fly1.png"},
             {id: "fly2", src: "batman-resources/fly2.png"},
-            {id: "grass", src: "batman-resources/grass.jpg"},
+            {id: "ground", src: "batman-resources/ground.png"},
+            {id: "roof", src: "batman-resources/roof.png"},
             {id: "bg", src: "batman-resources/bg.png"}
         ];
     }
@@ -104,23 +105,37 @@ export class Batman {
 
     initInterface(domNode) {
         this.animation_paused = true;
+        this.time = 0;
 
         this.go = () => {
+            this.last_raf_id = null;
+
             let newTime = new Date().getTime();
-            this.time += (newTime - this.prevTime) / 1000;
+
+            if (!this.animation_just_started) {
+                let delta_time = newTime - this.prevTime;
+
+                if (delta_time < 0.05) { //20fps
+                    this.last_raf_id = requestAnimationFrame(this.go);
+                    return;
+                }
+
+                this.time += delta_time / 1000;
+
+                this.time = Math.min(this.current_path.efficient_max_time, this.time);
+                if (this.time == this.current_path.efficient_max_time)
+                    this.setAnimationPause(true);
+            }
+            this.animation_just_started = false;
             this.prevTime = newTime;
 
-            this.time = Math.min(this.current_path.efficient_max_time, this.time);
-            if (this.time == this.current_path.efficient_max_time)
-                this.setAnimationPause(true);
-
-            this.batman_view.redraw(this.current_path, this.time);
+            this.batman_view.redraw(this.current_path, this.time, this.time == 0 || this.time == this.current_path.efficient_max_time);
 
             this.time_input.value_no_fire = this.time;
             this.$time_info.text(this.time.toFixed(1) + ' с');
 
             if (!this.animation_paused)
-                requestAnimationFrame(this.go);
+                this.last_raf_id = requestAnimationFrame(this.go); //TODO make this line a method
         };
 
         this.initCanvas(domNode);
@@ -153,7 +168,7 @@ export class Batman {
             canvas_height: 300,
             x_left: -10,
             y_top: 20,
-            pixel_size: 0.1 * 2
+            pixel_size: PIXEL_SIZE
         });
     }
 
@@ -203,10 +218,8 @@ export class Batman {
             return;
 
         this.animation_paused = value;
-        if (!this.animation_paused) {
-            this.prevTime = new Date().getTime();
-            requestAnimationFrame(this.go);
-        }
+        if (!this.animation_paused)
+            this.startAnimation();
         this.playPause.innerText = this.animation_paused ? '>' : '||';
     }
 
@@ -276,9 +289,14 @@ export class Batman {
     }
 
     moveToTime(time) {
-        this.prevTime = new Date().getTime();
         this.time = Math.min(time, this.current_path.landing_time);
-        requestAnimationFrame(this.go);
+        this.startAnimation();
+    }
+
+    startAnimation() {
+        this.animation_just_started = true;
+        if (!this.last_raf_id)
+            this.last_raf_id = requestAnimationFrame(this.go);
     }
 
     static button(title) {

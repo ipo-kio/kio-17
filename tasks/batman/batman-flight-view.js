@@ -1,4 +1,4 @@
-import {HILL_HEIGHT} from './consts'
+import {BATMAN_SKIP_H, BATMAN_SKIP_W, HILL_HEIGHT} from './consts'
 
 export class BatmanFlightView {
 
@@ -14,19 +14,27 @@ export class BatmanFlightView {
 
         this.fly2 = this.kioapi.getResource('fly2');
         this.fly2w = this.fly2.width;
-        this.fly2h = this.fly2.height / 3;
+        this.fly2h = this.fly2.height / 4;
+
+        this.ctx = this.canvas.getContext('2d');
+        this.sky_pattern = this.ctx.createPattern(this.kioapi.getResource('bg'), 'repeat-x');
+        let grass_img = this.kioapi.getResource('ground');
+        this.ground_pattern = this.ctx.createPattern(grass_img, 'repeat');
+        this.ground_height = grass_img.height;
+        this.roof_img = this.kioapi.getResource('roof');
 
         $(window).on('resize', () => this.resize());
     }
 
-    redraw(path, time) {
+    redraw(path, time, pose_standing /*boolean*/) {
         this.last_redraw_path = path;
         this.last_redraw_time = time;
+        this.last_redraw_pose_standing = pose_standing;
 
         let pos = path.indexByTime(time);
         this.position_camera(path.x(pos), path.y(pos));
 
-        let ctx = this.canvas.getContext('2d');
+        let ctx = this.ctx;
 
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -35,30 +43,48 @@ export class BatmanFlightView {
         this.drawPath(ctx, path);
         this.drawActions(ctx, path);
 
+        let pose = pose_standing ? 4 : path.pose(pos);
         this.drawBatman(ctx, this.local2canvas({
             x: path.x(pos),
             y: path.y(pos)
-        }), path.theta(pos), path.pose(pos));
+        }), path.theta(pos), pose);
     }
 
     drawSky(ctx) {
-        ctx.fillStyle = skyGradient(ctx, 0, 0, 0, this.canvas.height);
-        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        ctx.fillStyle = this.sky_pattern;
+        let dx = Math.round(this.x_left / this.pixel_size);
+        ctx.save();
+        ctx.translate(-dx, 0);
+        ctx.fillRect(dx, 0, this.canvas.width, this.canvas.height);
+        ctx.restore();
     }
 
     drawGround(ctx) {
-        ctx.fillStyle = ctx.createPattern(this.kioapi.getResource('grass'), 'repeat');
-        let {x: zero_x, y: zero_y} = this.local2canvas({x: 0, y: 0});
+        ctx.fillStyle = this.ground_pattern;
+        let {x: zero_x, y: zero_y} = this.local2canvas({x: 0, y: 0}, true);
         let hill_height = this.local_length2canvas(HILL_HEIGHT);
         let a_lot = this.local_length2canvas(1000);
-        ctx.fillRect(zero_x - a_lot, zero_y, a_lot, a_lot);
-        ctx.fillRect(zero_x, zero_y + hill_height, a_lot, a_lot);
+
+        ctx.drawImage(this.roof_img, zero_x - BATMAN_SKIP_H, zero_y - BATMAN_SKIP_W);
+
+        let dx = Math.round(this.x_left / this.pixel_size);
+        ctx.save();
+        ctx.translate(-dx, 0);
+        ctx.fillRect(dx + zero_x - a_lot, zero_y + hill_height, 2 * a_lot, a_lot);
+
+        ctx.restore();
     }
 
     drawBatman(ctx, {x, y}, theta, pose) {
         ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(-theta);
+
+        if (pose == 4) {
+            ctx.translate(Math.round(x), Math.round(y) - this.fly2w / 2 + 2);
+            ctx.rotate(-Math.PI / 2);
+        } else {
+            ctx.translate(x, y);
+            ctx.rotate(-theta);
+        }
 
         ctx.drawImage(
             this.fly2,
@@ -113,10 +139,9 @@ export class BatmanFlightView {
     }
 
     resize() {
-        let w = $(this.canvas.parentNode).width();
-        this.canvas.width = w;
+        this.canvas.width = $(this.canvas.parentNode).width();
         if (this.last_redraw_path)
-            this.redraw(this.last_redraw_path, this.last_redraw_time);
+            this.redraw(this.last_redraw_path, this.last_redraw_time, this.last_redraw_pose_standing);
     }
 
     canvas2local({x, y}) {
@@ -128,16 +153,18 @@ export class BatmanFlightView {
 
     position_camera(local_batman_x, local_batman_y) {
         let w = this.canvas.width * this.pixel_size;
-        let h = this.canvas.height * this.pixel_size;
+        let h = (this.canvas.height - this.ground_height) * this.pixel_size;
         let x_left = -w / 2 + local_batman_x;
-        let y_top = h / 2/* + local_batman_y*/;
+        let y_top = h / 2 /*- 32 * this.pixel_size*/; //grass size/* + local_batman_y*/
 
-        let min_g = 10 * this.pixel_size;
-        if (x_left < -min_g)
-            x_left = -min_g;
+        let min_gh = BATMAN_SKIP_H * this.pixel_size; //this.roof_img.width * this.pixel_size;
+        if (x_left < -min_gh)
+            x_left = -min_gh;
 
-        if ((y_top + HILL_HEIGHT + min_g) / this.pixel_size < this.canvas.height)
-            y_top = this.canvas.height * this.pixel_size - HILL_HEIGHT - min_g;
+        let min_gw = this.ground_height * this.pixel_size;
+
+        //if (y_top + HILL_HEIGHT + min_gw < this.canvas.height * this.pixel_size) //if we allow to go up
+        y_top = this.canvas.height * this.pixel_size - HILL_HEIGHT - min_gw;
 
         this.x_left = x_left;
         this.y_top = y_top;
