@@ -88,7 +88,7 @@ export class BatmanFlightView {
         ctx.save();
 
         if (pose == 4) {
-            ctx.translate(Math.round(x), Math.round(y) - this.fly2w / 2 + 2);
+            ctx.translate(Math.round(x) + this.fly2h / 2, Math.round(y) - this.fly2w / 2 + 2);
             ctx.rotate(-Math.PI / 2);
         } else {
             ctx.translate(x, y);
@@ -99,7 +99,7 @@ export class BatmanFlightView {
             this.fly2,
             0, (pose - 1) * this.fly2h,
             this.fly2w, this.fly2h,
-            -this.fly2w / 2, -this.fly2h / 2,
+            -this.fly2w / 2, -this.fly2h /* /2 */,
             this.fly2w, this.fly2h
         );
 

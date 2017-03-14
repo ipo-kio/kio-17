@@ -48,6 +48,13 @@ export class Batman {
             view(v) {
                 if (v > 60) return "нет"; else return "да"
             }
+        }, {
+            name: "smooth_landing",
+            title: "Мягкая посадка",
+            ordering: 'maximize',
+            view: v => {
+                if (v == 1) return "да"; else return "нет";
+            }
         });
         if (this.settings.count_windows)
             params.push({
@@ -139,7 +146,8 @@ export class Batman {
             this.animation_just_started = false;
             this.prevTime = newTime;
 
-            this.batman_view.redraw(this.current_path, this.time, this.time == 0 || this.time == this.current_path_landing_time());
+            let should_stand = this.time == 0 || this.time == this.current_path_landing_time() && this.current_path_smooth_landing();
+            this.batman_view.redraw(this.current_path, this.time, should_stand);
 
             this.time_input.value_no_fire = this.time;
             this.$time_info.text(this.time.toFixed(1) + ' с');
@@ -169,6 +177,13 @@ export class Batman {
             return 100500;
         else
             return this.current_path.landing_time;
+    }
+
+    current_path_smooth_landing() {
+        if (this.current_path == null)
+            return 0;
+        else
+            return this.current_path.smooth_landing();
     }
 
     static take_actions_from(elements_list) {
@@ -327,6 +342,7 @@ export class Batman {
         this.current_path = null;
         this.kioapi.submitResult({
             landing_time: 100500,
+            smooth_landing: 0,
             loops: 0,
             windows: 0
         });

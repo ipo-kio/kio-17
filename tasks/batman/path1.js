@@ -148,10 +148,23 @@ export class Path {
         }
     }
 
+    smooth_landing() {
+        if (this.landing_time > 60)
+            return 0;
+
+        let pos = this.indexByTime(this.landing_time);
+        let theta_last = this.theta(pos);
+        if (Math.cos(theta_last) >= Math.sqrt(3) / 2)
+            return 1;
+        else
+            return 0;
+    }
+
     result() {
         let o = {
             landing_time: this.landing_time,
-            loops: this.loops
+            loops: this.loops,
+            smooth_landing: this.smooth_landing()
         };
 
         if (this.windows != null)
