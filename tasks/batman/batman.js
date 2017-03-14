@@ -55,6 +55,10 @@ export class Batman {
             view: v => {
                 if (v == 1) return "да"; else return "нет";
             }
+        }, {
+            name: "loops",
+            title: "Фигур",
+            ordering: "maximize"
         });
         if (this.settings.count_windows)
             params.push({
@@ -62,14 +66,10 @@ export class Batman {
                 title: "Задето окон",
                 ordering: 'maximize'
             });
-        params.push({
-                name: "loops",
-                title: "Фигур",
-                ordering: "maximize"
-            },
+        params.push(
             {
                 name: "landing_time",
-                ordering: "maximize",
+                ordering: "minimize",
                 title: "Время до приземления",
                 view(v) {
                     if (!v) v = 0;
@@ -156,6 +156,8 @@ export class Batman {
                 this.last_raf_id = requestAnimationFrame(this.go); //TODO make this line a method
         };
 
+        this.initWindows();
+
         this.initCanvas(domNode);
 
         this.initTimeSliderStartAndStop(domNode);
@@ -197,6 +199,10 @@ export class Batman {
         }
 
         return actions;
+    }
+
+    initWindows() {
+        this.windows = [];
     }
 
     initCanvas(domNode) {

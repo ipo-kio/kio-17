@@ -23,7 +23,7 @@ import {g, HILL_HEIGHT, get_pose} from './consts'
  */
 
 export class Path {
-    constructor({v0, theta0, x0, y0}, {pose0, tmax, dt}, actions) {
+    constructor({v0, theta0, x0, y0}, {pose0, tmax, dt}, actions, windows) {
         let t0 = 0;
         let {B: B0, C: C0} = get_pose(pose0);
 
@@ -33,6 +33,7 @@ export class Path {
         this.pose0 = pose0;
         this.solution = {v0, theta0, pose0};
         this.actions = actions;
+        this.windows = windows;
         this.poses_array = new Array(this.t_series.length);
 
         for (let i = 0; i <= sorted_actions.length; i++) {
@@ -131,21 +132,35 @@ export class Path {
     }
 
     _eval_windows(x0, y0, dx, w, h) {
-        this.windows = 0;
-        let o = {};
+        let n = this.windows.length;
+        this.windows_set = new Array(n);
+        for (let i = 0; i < n; i++)
+            this.windows_set[i] = false;
+
         for (let i = 0; i < this.length; i++) {
             let x = this.x(i);
             let y = this.y(i);
 
-            let wnd = 0;
+            for (let i = 0; i < n; i++) {
+                let w = this.windows[i];
+                if (x >= w.x0 && x <= w.x0 + w.w && y >= w.y0 - w.h && t <= w.y0)
+                    this.windows_set[i] = true;
+            }
+
+            /*let wnd = 0;
             while (x > dx) {x -= dx; wnd += 1; }
             while (x < 0) { x += dx; wnd -= 1; }
 
             if (x >= x0 && x <= x0 + w && y >= y0 - h && y <= y0 && !(wnd in o)) {
                 this.windows++;
                 o[wnd] = true;
-            }
+            }*/
         }
+
+        this.windows_count = 0;
+        for (let i = 0; i < n; i++)
+            if (this.windows_set[i])
+                this.windows_count++;
     }
 
     smooth_landing() {

@@ -30,9 +30,16 @@ export class ValuesInput {
     get values() {
         let obj = {};
 
-        for (let {name, round_mul} of this.params) {
-            let val = +$(this.name2input[name]).val();
+        for (let {name, round_mul, min, max} of this.params) {
+            let val_str = $(this.name2input[name]).val();
+            //if is empty
+            if (/^\s*$/.test(val_str))
+                return null;
+
+            let val = +val_str;
             if (isNaN(val))
+                return null;
+            if (min != null && val < min || max != null && val > max)
                 return null;
             if (Math.abs(val * round_mul - Math.round(val * round_mul)) > 1e-6) //if val * round_mul is not integer
                 return null;
@@ -82,9 +89,9 @@ export class ValuesInput {
 export class InitialValuesInput extends ValuesInput {
     constructor(v_round_mul) {
         super(
-            {name: 'initial_theta', round_mul: 1},
-            {name: 'initial_v', round_mul: v_round_mul},
-            {name: 'initial_pose', round_mul: 1}
+            {name: 'initial_theta', round_mul: 1, min: -60, max: 60},
+            {name: 'initial_v', round_mul: v_round_mul, min: 0, max: 20},
+            {name: 'initial_pose', round_mul: 1, min: null, max: null}
         );
     }
 
@@ -116,7 +123,10 @@ export class InitialValuesInput extends ValuesInput {
 
 export class IntermediateValuesInput extends ValuesInput {
     constructor(time_round_mul) {
-        super({name: 'next_time', round_mul: time_round_mul}, {name: 'next_pose', round_mul: 1});
+        super(
+            {name: 'next_time', round_mul: time_round_mul, min: 0, max: 60},
+            {name: 'next_pose', round_mul: 1, min: null, max: null}
+        );
     }
 
     initInterface() {
