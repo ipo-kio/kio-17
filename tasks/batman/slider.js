@@ -70,8 +70,8 @@ export class Slider {
             this.onvaluechange({});
     }
 
-    resize() {
-        this.canvas.width = $(this.outer).width();
+    resize(preferred_width) {
+        this.canvas.width = preferred_width ? preferred_width : $(this.outer).width();
         this.redraw();
     }
 

@@ -30,8 +30,13 @@ export class ValuesInput {
     get values() {
         let obj = {};
 
-        for (let {name} of this.params) {
-            obj[name] = +$(this.name2input[name]).val();
+        for (let {name, round_mul} of this.params) {
+            let val = +$(this.name2input[name]).val();
+            if (isNaN(val))
+                return null;
+            if (Math.abs(val * round_mul - Math.round(val * round_mul)) > 1e-6) //if val * round_mul is not integer
+                return null;
+            obj[name] = val;
         }
 
         return obj;
@@ -75,8 +80,12 @@ export class ValuesInput {
 }
 
 export class InitialValuesInput extends ValuesInput {
-    constructor() {
-        super({name: 'initial_theta'}, {name: 'initial_v'}, {name: 'initial_pose'});
+    constructor(v_round_mul) {
+        super(
+            {name: 'initial_theta', round_mul: 1},
+            {name: 'initial_v', round_mul: v_round_mul},
+            {name: 'initial_pose', round_mul: 1}
+        );
     }
 
     initInterface() {
@@ -92,8 +101,8 @@ export class InitialValuesInput extends ValuesInput {
         let sp3 = document.createElement('span');
         sp3.innerText = 'м/c в позиции';
 
-        let inp1 = this.createInput('initial_theta', 3);
-        let inp2 = this.createInput('initial_v', 3);
+        let inp1 = this.createInput('initial_theta', 5);
+        let inp2 = this.createInput('initial_v', 5);
         let inp3 = this.createSelect('initial_pose', ['Первая поза', 'Вторая поза', 'Третья поза']);
 
         this.domNode.appendChild(sp1);
@@ -106,8 +115,8 @@ export class InitialValuesInput extends ValuesInput {
 }
 
 export class IntermediateValuesInput extends ValuesInput {
-    constructor() {
-        super({name: 'next_time'}, {name: 'next_pose'});
+    constructor(time_round_mul) {
+        super({name: 'next_time', round_mul: time_round_mul}, {name: 'next_pose', round_mul: 1});
     }
 
     initInterface() {
@@ -121,7 +130,7 @@ export class IntermediateValuesInput extends ValuesInput {
         let sp2 = document.createElement('span');
         sp2.innerText = 'изменить позу на';
 
-        let inp1 = this.createInput('next_time', 4);
+        let inp1 = this.createInput('next_time', 5);
         let inp2 = this.createSelect('next_pose', ['Первая поза', 'Вторая поза', 'Третья поза']);
 
         this.domNode.appendChild(sp1);

@@ -31,8 +31,12 @@ export class BatmanFlightView {
         this.last_redraw_time = time;
         this.last_redraw_pose_standing = pose_standing;
 
-        let pos = path.indexByTime(time);
-        this.position_camera(path.x(pos), path.y(pos));
+        let pos;
+        if (path != null) {
+            pos = path.indexByTime(time);
+            this.position_camera(path.x(pos), path.y(pos));
+        } else
+            this.position_camera(0, 0);
 
         let ctx = this.ctx;
 
@@ -40,14 +44,19 @@ export class BatmanFlightView {
 
         this.drawSky(ctx);
         this.drawGround(ctx);
-        this.drawPath(ctx, path);
-        this.drawActions(ctx, path);
+        if (path != null) {
+            this.drawPath(ctx, path);
+            this.drawActions(ctx, path);
+        }
 
-        let pose = pose_standing ? 4 : path.pose(pos);
-        this.drawBatman(ctx, this.local2canvas({
-            x: path.x(pos),
-            y: path.y(pos)
-        }), path.theta(pos), pose);
+        if (path != null) {
+            let pose = pose_standing ? 4 : path.pose(pos);
+            this.drawBatman(ctx, this.local2canvas({
+                x: path.x(pos),
+                y: path.y(pos)
+            }), path.theta(pos), pose);
+        } else
+            this.drawBatman(ctx, this.local2canvas({x: 0, y: 0}), 0, 4);
     }
 
     drawSky(ctx) {
@@ -138,8 +147,8 @@ export class BatmanFlightView {
         ctx.restore();
     }
 
-    resize() {
-        this.canvas.width = $(this.canvas.parentNode).width();
+    resize(preferred_width) {
+        this.canvas.width = preferred_width ? preferred_width : $(this.canvas.parentNode).width();
         if (this.last_redraw_path)
             this.redraw(this.last_redraw_path, this.last_redraw_time, this.last_redraw_pose_standing);
     }
@@ -155,7 +164,7 @@ export class BatmanFlightView {
         let w = this.canvas.width * this.pixel_size;
         let h = (this.canvas.height - this.ground_height) * this.pixel_size;
         let x_left = -w / 2 + local_batman_x;
-        let y_top = h / 2 /*- 32 * this.pixel_size*/; //grass size/* + local_batman_y*/
+        let y_top = h / 2 /*- 32 * this.pixel_size*/; //grass size/* + local_batman_y */
 
         let min_gh = BATMAN_SKIP_H * this.pixel_size; //this.roof_img.width * this.pixel_size;
         if (x_left < -min_gh)

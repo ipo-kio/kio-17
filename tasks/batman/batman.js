@@ -17,11 +17,11 @@ export class Batman {
         return 'batman';
     }
 
-    initialize(domNode, kioapi) {
+    initialize(domNode, kioapi, preferred_width) {
         this.kioapi = kioapi;
         this.domNode = domNode;
 
-        this.initInterface(domNode);
+        this.initInterface(domNode, preferred_width);
         this.kioapi.submitResult(this.current_path.result());
     }
 
@@ -37,23 +37,25 @@ export class Batman {
     }
 
     parameters() {
-        function speed_is_ok(speed) {
-            return speed < 100 ? 1 : 0;
-        }
-
-        return [
-            {
-                name: "landing_time",
-                title: "Приземление за минуту",
-                ordering: 'maximize',
-                normalize: v => {
-                    return v <= 60 ? 1 : 0;
-                },
-                view(v) {
-                    if (v > 60) return "нет"; else return "да"
-                }
+        let params = [];
+        params.push({
+            name: "landing_time",
+            title: "Приземление за минуту",
+            ordering: 'maximize',
+            normalize: v => {
+                return v <= 60 ? 1 : 0;
             },
-            {
+            view(v) {
+                if (v > 60) return "нет"; else return "да"
+            }
+        });
+        if (this.settings.count_windows)
+            params.push({
+                name: "windows",
+                title: "Задето окон",
+                ordering: 'maximize'
+            });
+        params.push({
                 name: "loops",
                 title: "Фигур",
                 ordering: "maximize"
@@ -68,18 +70,23 @@ export class Batman {
                     else return v.toFixed(2);
                 }
             }
-        ];
+        );
+
+        return params;
     }
 
     solution() {
+        if (this.current_path == null)
+            return null;
+
         let {v0, theta0, pose0} = this.current_path.solution;
         let actions = this.current_path.actions;
 
         let a = [];
         for (let action of actions)
-            a.push({t: action.o.next_time, p:action.o.next_pose});
+            a.push({t: action.o.next_time, p: action.o.next_pose});
 
-        return {v0, t0:theta0, p0:pose0, a}
+        return {v0, t0: theta0, p0: pose0, a}
     }
 
     loadSolution(solution) {
@@ -95,8 +102,8 @@ export class Batman {
         this.actions_list_of_elements.add_remove_extra_action_suspend = true;
         this.actions_list_of_elements.clear_elements();
         for (let action of solution.a) {
-           let ivi = this.createIntermediateValues();
-           ivi.values = {next_time: action.t, next_pose: action.p};
+            let ivi = this.createIntermediateValues();
+            ivi.values = {next_time: action.t, next_pose: action.p};
             this.actions_list_of_elements.add_element(ivi);
         }
         this.actions_list_of_elements.add_remove_extra_action_suspend = false;
@@ -106,7 +113,7 @@ export class Batman {
 
     //private methods
 
-    initInterface(domNode) {
+    initInterface(domNode, preferred_width) {
         this.animation_paused = true;
         this.time = 0;
 
@@ -125,14 +132,14 @@ export class Batman {
 
                 this.time += delta_time / 1000;
 
-                this.time = Math.min(this.current_path.efficient_max_time, this.time);
-                if (this.time == this.current_path.efficient_max_time)
+                this.time = Math.min(this.current_path_efficient_max_time(), this.time);
+                if (this.time == this.current_path_efficient_max_time())
                     this.setAnimationPause(true);
             }
             this.animation_just_started = false;
             this.prevTime = newTime;
 
-            this.batman_view.redraw(this.current_path, this.time, this.time == 0 || this.time == this.current_path.landing_time);
+            this.batman_view.redraw(this.current_path, this.time, this.time == 0 || this.time == this.current_path_landing_time());
 
             this.time_input.value_no_fire = this.time;
             this.$time_info.text(this.time.toFixed(1) + ' с');
@@ -147,13 +154,29 @@ export class Batman {
 
         this.initParamsSelector(domNode);
 
-        this.full_resize();
+        this.full_resize(preferred_width);
+    }
+
+    current_path_efficient_max_time() {
+        if (this.current_path == null)
+            return 0;
+        else
+            return this.current_path.efficient_max_time;
+    }
+
+    current_path_landing_time() {
+        if (this.current_path == null)
+            return 100500;
+        else
+            return this.current_path.landing_time;
     }
 
     static take_actions_from(elements_list) {
         let actions = [];
         for (let element of elements_list) {
             let val = element.values;
+            if (val == null)
+                return null;
             let action = new BatmanAction(val);
             actions.push(action);
         }
@@ -227,7 +250,7 @@ export class Batman {
     }
 
     initParamsSelector(domNode) {
-        this.initial_params_values_input = new InitialValuesInput();
+        this.initial_params_values_input = new InitialValuesInput(this.settings.rounding);
         this.initial_params_values_input.values = {
             'initial_theta': 0,
             'initial_v': 10,
@@ -248,19 +271,26 @@ export class Batman {
     }
 
     createIntermediateValues() {
-        let ivi = new IntermediateValuesInput();
+        let ivi = new IntermediateValuesInput(this.settings.rounding);
         ivi.change_handler = this.userChangedInput.bind(this);
         return ivi;
     }
 
-    full_resize() {
-        this.batman_view.resize();
-        this.time_input.resize();
+    full_resize(preferred_width) {
+        if (preferred_width)
+            console.log('resizing to ', preferred_width);
+        this.batman_view.resize(preferred_width);
+        this.time_input.resize(preferred_width);
     }
 
     userChangedInput() {
         let actions = Batman.take_actions_from(this.actions_list_of_elements.elements_list);
         let initial_params = this.initial_params_values_input.values;
+
+        if (initial_params == null || actions == null) {
+            this.setup_empty_path();
+            return;
+        }
 
         let theta0 = initial_params.initial_theta * Math.PI / 180;
         if (theta0 > Math.PI / 3)
@@ -284,15 +314,28 @@ export class Batman {
             },
             actions
         );
+        if (this.settings.count_windows)
+            this.current_path._eval_windows(94 * PIXEL_SIZE, -64 * PIXEL_SIZE, 375 * PIXEL_SIZE, 29 * PIXEL_SIZE, 8 * PIXEL_SIZE);
 
-        this.time_input.visible_max_value = this.current_path.landing_time;
+        this.time_input.visible_max_value = this.current_path_landing_time();
 
         this.moveToTime(0);
         this.kioapi.submitResult(this.current_path.result());
     }
 
+    setup_empty_path() {
+        this.current_path = null;
+        this.kioapi.submitResult({
+            landing_time: 100500,
+            loops: 0,
+            windows: 0
+        });
+        this.time_input.visible_max_value = 0;
+        this.moveToTime(0);
+    }
+
     moveToTime(time) {
-        this.time = Math.min(time, this.current_path.landing_time);
+        this.time = Math.min(time, this.current_path_landing_time());
         this.startAnimation();
     }
 
@@ -314,4 +357,3 @@ export class Batman {
 //в перескопах увидят войну ...
 
 //TODO добавить отсчеты на слайдер
-//TODO показывать конец слайдера

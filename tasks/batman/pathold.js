@@ -49,10 +49,6 @@ export class Path {
         this.v1 = v1;
         this.B = B;
         this.t_series = ode.solve(0, tau_max, u0, theta0, 0, 0);
-
-        /*for (let i = 0; i < this.length; i++) {
-            console.debug(this.t(i), this.v(i), this.theta(i), this.x(i), this.y(i));
-        }*/
     }
 
     get length() {

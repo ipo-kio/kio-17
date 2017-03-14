@@ -47,8 +47,6 @@ export class Path {
             let t0_ind = this.t_series.indexByX(t0);
             let t1_ind = this.t_series.indexByX(t1);
 
-            //console.assert(t1_ind - t0_ind + 1 == ts.length);
-
             //copy from ts to this.t_series
             for (let i = t0_ind; i <= t1_ind; i++) {
                 this.t_series.points[i] = ts.points[i - t0_ind];
@@ -65,12 +63,12 @@ export class Path {
                 pose0 = sorted_actions[i].o.next_pose;
                 ({B:B0, C:C0} = get_pose(pose0))
             }
-            // console.log('next point: t, v, theta, B0, C0', t0, v0, theta0, B0, C0);
         }
 
         this.landing_time = this._eval_landing_time();
         this.efficient_max_time = Math.min(this.landing_time, tmax);
         this.loops = this._eval_loops();
+        this.windows = null;
     }
 
     get_ode(B, C, dt) {
@@ -132,10 +130,33 @@ export class Path {
         return Math.abs(Math.round(dtheta / (2 * Math.PI)));
     }
 
+    _eval_windows(x0, y0, dx, w, h) {
+        this.windows = 0;
+        let o = {};
+        for (let i = 0; i < this.length; i++) {
+            let x = this.x(i);
+            let y = this.y(i);
+
+            let wnd = 0;
+            while (x > dx) {x -= dx; wnd += 1; }
+            while (x < 0) { x += dx; wnd -= 1; }
+
+            if (x >= x0 && x <= x0 + w && y >= y0 - h && y <= y0 && !(wnd in o)) {
+                this.windows++;
+                o[wnd] = true;
+            }
+        }
+    }
+
     result() {
-        return {
+        let o = {
             landing_time: this.landing_time,
             loops: this.loops
-        }
+        };
+
+        if (this.windows != null)
+            o.windows = this.windows;
+
+        return o;
     }
 }
