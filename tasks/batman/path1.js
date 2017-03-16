@@ -69,7 +69,6 @@ export class Path {
         this.landing_time = this._eval_landing_time();
         this.efficient_max_time = Math.min(this.landing_time, tmax);
         this.loops = this._eval_loops();
-        this.windows = null;
     }
 
     get_ode(B, C, dt) {
@@ -131,11 +130,16 @@ export class Path {
         return Math.abs(Math.round(dtheta / (2 * Math.PI)));
     }
 
-    _eval_windows(x0, y0, dx, w, h) {
+    _eval_windows() {
+        if (!this.windows)
+            return;
+
         let n = this.windows.length;
         this.windows_set = new Array(n);
         for (let i = 0; i < n; i++)
             this.windows_set[i] = false;
+
+        this.windows_count = 0;
 
         for (let i = 0; i < this.length; i++) {
             let x = this.x(i);
@@ -143,18 +147,9 @@ export class Path {
 
             for (let i = 0; i < n; i++) {
                 let w = this.windows[i];
-                if (x >= w.x0 && x <= w.x0 + w.w && y >= w.y0 - w.h && t <= w.y0)
+                if (x >= w.x && x <= w.x + w.w && y >= w.y - w.h && y <= w.y)
                     this.windows_set[i] = true;
             }
-
-            /*let wnd = 0;
-            while (x > dx) {x -= dx; wnd += 1; }
-            while (x < 0) { x += dx; wnd -= 1; }
-
-            if (x >= x0 && x <= x0 + w && y >= y0 - h && y <= y0 && !(wnd in o)) {
-                this.windows++;
-                o[wnd] = true;
-            }*/
         }
 
         this.windows_count = 0;
@@ -183,7 +178,7 @@ export class Path {
         };
 
         if (this.windows != null)
-            o.windows = this.windows;
+            o.windows = this.windows_count;
 
         return o;
     }

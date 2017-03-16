@@ -5,7 +5,7 @@ import {Path} from './path1'
 import {BatmanAction} from './batman_action'
 import {InitialValuesInput, IntermediateValuesInput} from './values_input'
 import {ListOfElements} from './list_of_elements'
-import {get_pose, PIXEL_SIZE} from './consts'
+import {delta_t, PIXEL_SIZE} from './consts'
 
 export class Batman {
 
@@ -32,7 +32,8 @@ export class Batman {
             {id: "fly2", src: "batman-resources/fly2.png"},
             {id: "ground", src: "batman-resources/ground.png"},
             {id: "roof", src: "batman-resources/roof.png"},
-            {id: "bg", src: "batman-resources/bg.png"}
+            {id: "bg", src: "batman-resources/bg.png"},
+            {id: "target", src: "batman-resources/target.png"}
         ];
     }
 
@@ -202,7 +203,32 @@ export class Batman {
     }
 
     initWindows() {
-        this.windows = [];
+        function i(x, y) {
+            return {
+                x: (x - 2) * PIXEL_SIZE,
+                y: (140 - 64 - y) * PIXEL_SIZE,
+                w: 29 * PIXEL_SIZE,
+                h: 8 * PIXEL_SIZE
+            };
+        }
+
+        this.windows = [
+            i(50, 128),
+            i(71, 161),
+            i(121, 155),
+            i(136, 189),
+            i(192, 192),
+            i(265, 200)
+        ];
+
+        /*
+        this.windows = [{
+            x: 94 * PIXEL_SIZE,
+            y: -64 * PIXEL_SIZE,
+            w: 29 * PIXEL_SIZE,
+            h: 8 * PIXEL_SIZE
+        }];
+        */
     }
 
     initCanvas(domNode) {
@@ -216,7 +242,7 @@ export class Batman {
             x_left: -10,
             y_top: 20,
             pixel_size: PIXEL_SIZE
-        });
+        }, this.windows);
     }
 
     initTimeSliderStartAndStop(domNode) {
@@ -298,8 +324,8 @@ export class Batman {
     }
 
     full_resize(preferred_width) {
-        if (preferred_width)
-            console.log('resizing to ', preferred_width);
+        // if (preferred_width) //TODO get rid of console.log
+        //     console.log('resizing to ', preferred_width);
         this.batman_view.resize(preferred_width);
         this.time_input.resize(preferred_width);
     }
@@ -331,12 +357,12 @@ export class Batman {
             }, {
                 pose0: initial_params.initial_pose,
                 tmax: 60,
-                dt: 0.01 / 10
+                dt: delta_t
             },
-            actions
+            actions,
+            this.windows
         );
-        if (this.settings.count_windows)
-            this.current_path._eval_windows(94 * PIXEL_SIZE, -64 * PIXEL_SIZE, 375 * PIXEL_SIZE, 29 * PIXEL_SIZE, 8 * PIXEL_SIZE);
+        this.current_path._eval_windows();
 
         this.time_input.visible_max_value = this.current_path_landing_time();
 

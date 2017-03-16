@@ -2,13 +2,14 @@ import {BATMAN_SKIP_H, BATMAN_SKIP_W, HILL_HEIGHT} from './consts'
 
 export class BatmanFlightView {
 
-    constructor(canvas, kioapi, {canvas_width, canvas_height, x_left, y_top, pixel_size}) {
+    constructor(canvas, kioapi, {canvas_width, canvas_height, x_left, y_top, pixel_size}, windows) {
         this.canvas = canvas;
         canvas.width = canvas_width; //TODO первое слово: Мвурнпу6ысепчиунеупни
         canvas.height = canvas_height;
         this.x_left = x_left;
         this.y_top = y_top;
         this.pixel_size = pixel_size;
+        this.windows = windows;
 
         this.kioapi = kioapi;
 
@@ -44,6 +45,9 @@ export class BatmanFlightView {
 
         this.drawSky(ctx);
         this.drawGround(ctx);
+
+        this.drawWindows(ctx, path);
+
         if (path != null) {
             this.drawPath(ctx, path);
             this.drawActions(ctx, path);
@@ -84,11 +88,38 @@ export class BatmanFlightView {
         ctx.restore();
     }
 
+    drawWindows(ctx, path) {
+        if (!this.windows)
+            return;
+
+        let target = this.kioapi.getResource('target');
+
+        let img_w = target.width;
+        let img_h = target.height / 2;
+
+        for (let i = 0; i < this.windows.length; i++) {
+            let win = this.windows[i];
+            let is_on = path != null && path.windows_set[i];
+
+            let {x, y} = this.local2canvas(win);
+            let w = this.local_length2canvas(win.w);
+            let h = this.local_length2canvas(win.h);
+
+            ctx.drawImage(
+                target, 0, img_h * is_on, img_w, img_h,
+                Math.round(x + w / 2 - img_w / 2), Math.round(y + h / 2 - img_h / 2),
+                img_w, img_h
+            );
+        }
+    }
+
     drawBatman(ctx, {x, y}, theta, pose) {
         ctx.save();
 
+        let dx = 5;
+
         if (pose == 4) {
-            ctx.translate(Math.round(x) + this.fly2h / 2, Math.round(y) - this.fly2w / 2 + 2);
+            ctx.translate(Math.round(x) + this.fly2h / 2 - dx, Math.round(y) - this.fly2w / 2 + 2);
             ctx.rotate(-Math.PI / 2);
         } else {
             ctx.translate(x, y);
@@ -99,7 +130,7 @@ export class BatmanFlightView {
             this.fly2,
             0, (pose - 1) * this.fly2h,
             this.fly2w, this.fly2h,
-            -this.fly2w / 2, -this.fly2h /* /2 */,
+            -this.fly2w / 2, -this.fly2h + dx/* /2 */,
             this.fly2w, this.fly2h
         );
 

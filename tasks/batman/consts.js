@@ -3,6 +3,7 @@ export const PIXEL_SIZE = 0.2;
 export const BATMAN_SKIP_H = 14;
 export const BATMAN_SKIP_W = 1 / 0.2
 export const g = 9.81;
+export const delta_t = 0.001;
 
 export const poses = [
     {
