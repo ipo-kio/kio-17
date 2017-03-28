@@ -212,14 +212,17 @@ export class Batman {
             };
         }
 
-        this.windows = [
-            i(50, 128),
-            i(71, 161),
-            i(121, 155),
-            i(136, 189),
-            i(192, 192),
-            i(265, 200)
-        ];
+        if (this.settings.count_windows)
+            this.windows = [
+                i(50, 128),
+                i(71, 161),
+                i(121, 155),
+                i(136, 189),
+                i(192, 192),
+                i(265, 200)
+            ];
+        else
+            this.windows = [];
 
         /*
         this.windows = [{
