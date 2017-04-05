@@ -38,7 +38,10 @@ export class Batman {
     }
 
     parameters() {
+        let is_fail = loops => loops < 0 || loops > 1000;
+
         let params = [];
+
         params.push({
             name: "landing_time",
             title: "Приземление за минуту",
@@ -54,12 +57,24 @@ export class Batman {
             title: "Мягкая посадка",
             ordering: 'maximize',
             view: v => {
-                if (v == 1) return "да"; else return "нет";
+                if (v === 1) return "да"; else return "нет";
             }
         }, {
             name: "loops",
             title: "Фигур",
-            ordering: "maximize"
+            ordering: "maximize",
+            normalize(v) {
+                if (is_fail(v))
+                    return -1;
+                else
+                    return v;
+            },
+            view(v) {
+                if (is_fail(v))
+                    return "слишком много";
+                else
+                    return "" + v;
+            }
         });
         if (this.settings.count_windows)
             params.push({
@@ -84,7 +99,7 @@ export class Batman {
     }
 
     solution() {
-        if (this.current_path == null)
+        if (this.current_path === null)
             return null;
 
         let {v0, theta0, pose0} = this.current_path.solution;
@@ -141,13 +156,13 @@ export class Batman {
                 this.time += delta_time / 1000;
 
                 this.time = Math.min(this.current_path_efficient_max_time(), this.time);
-                if (this.time == this.current_path_efficient_max_time())
+                if (this.time === this.current_path_efficient_max_time())
                     this.setAnimationPause(true);
             }
             this.animation_just_started = false;
             this.prevTime = newTime;
 
-            let should_stand = this.time == 0 || this.time == this.current_path_landing_time() && this.current_path_smooth_landing();
+            let should_stand = this.time === 0 || this.time === this.current_path_landing_time() && this.current_path_smooth_landing();
             this.batman_view.redraw(this.current_path, this.time, should_stand);
 
             this.time_input.value_no_fire = this.time;
@@ -169,21 +184,21 @@ export class Batman {
     }
 
     current_path_efficient_max_time() {
-        if (this.current_path == null)
+        if (this.current_path === null)
             return 0;
         else
             return this.current_path.efficient_max_time;
     }
 
     current_path_landing_time() {
-        if (this.current_path == null)
+        if (this.current_path === null)
             return 100500;
         else
             return this.current_path.landing_time;
     }
 
     current_path_smooth_landing() {
-        if (this.current_path == null)
+        if (this.current_path === null)
             return 0;
         else
             return this.current_path.smooth_landing();
@@ -193,7 +208,7 @@ export class Batman {
         let actions = [];
         for (let element of elements_list) {
             let val = element.values;
-            if (val == null)
+            if (val === null)
                 return null;
             let action = new BatmanAction(val);
             actions.push(action);
@@ -290,7 +305,7 @@ export class Batman {
     }
 
     setAnimationPause(value) {
-        if (this.animation_paused == value)
+        if (this.animation_paused === value)
             return;
 
         this.animation_paused = value;
@@ -337,7 +352,7 @@ export class Batman {
         let actions = Batman.take_actions_from(this.actions_list_of_elements.elements_list);
         let initial_params = this.initial_params_values_input.values;
 
-        if (initial_params == null || actions == null) {
+        if (initial_params === null || actions === null) {
             this.setup_empty_path();
             return;
         }

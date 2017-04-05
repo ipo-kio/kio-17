@@ -1,0 +1,9 @@
+create directory 'kio_test_box' with the following files:
+
+jquery-1.7.2.min.js
+preloadjs-0.6.2.min.js
+
+dces2contest.js
+
+kio_api.css
+kio_api.js
