@@ -90,7 +90,7 @@ export class Batman {
                 view(v) {
                     if (!v) v = 0;
                     if (v > 60) return "> 60 сек.";
-                    else return v.toFixed(2);
+                    else return (+v).toFixed(2);
                 }
             }
         );
