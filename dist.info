@@ -1,3 +1,5 @@
+use `npm install -E` to install exact versions of packages
+
 create directory 'kio_test_box' with the following files:
 
 jquery-1.7.2.min.js
