@@ -6,8 +6,11 @@ import {BatmanAction} from './batman_action'
 import {InitialValuesInput, IntermediateValuesInput} from './values_input'
 import {ListOfElements} from './list_of_elements'
 import {delta_t, PIXEL_SIZE} from './consts'
+import {LOCALIZATION} from "./localization";
 
 export class Batman {
+
+    static LOCALIZATION = LOCALIZATION;
 
     constructor(settings) {
         this.settings = settings;
@@ -44,24 +47,24 @@ export class Batman {
 
         params.push({
             name: "landing_time",
-            title: "Приземление за минуту",
+            title: this.message("Приземление за минуту"),
             ordering: 'maximize',
             normalize: v => {
                 return v <= 60 ? 1 : 0;
             },
-            view(v) {
-                if (v > 60) return "нет"; else return "да"
+            view: v => {
+                if (v > 60) return this.message("нет"); else return this.message("да");
             }
         }, {
             name: "smooth_landing",
-            title: "Мягкая посадка",
+            title: this.message("Мягкая посадка"),
             ordering: 'maximize',
             view: v => {
-                if (v === 1) return "да"; else return "нет";
+                if (v === 1) return this.message("да"); else return this.message("нет");
             }
         }, {
             name: "loops",
-            title: "Фигур",
+            title: this.message("Фигур"),
             ordering: "maximize",
             normalize(v) {
                 if (is_fail(v))
@@ -69,9 +72,9 @@ export class Batman {
                 else
                     return v;
             },
-            view(v) {
+            view: v => {
                 if (is_fail(v))
-                    return "слишком много";
+                    return this.message("слишком много");
                 else
                     return "" + v;
             }
@@ -79,17 +82,17 @@ export class Batman {
         if (this.settings.count_windows)
             params.push({
                 name: "windows",
-                title: "Задето окон",
+                title: this.message("Задето окон"),
                 ordering: 'maximize'
             });
         params.push(
             {
                 name: "landing_time",
                 ordering: "minimize",
-                title: "Время до приземления",
-                view(v) {
+                title: this.message("Время до приземления"),
+                view: v => {
                     if (!v) v = 0;
-                    if (v > 60) return "> 60 сек.";
+                    if (v > 60) return this.message("> 60 сек.");
                     else return (+v).toFixed(2);
                 }
             }
@@ -166,7 +169,7 @@ export class Batman {
             this.batman_view.redraw(this.current_path, this.time, should_stand);
 
             this.time_input.value_no_fire = this.time;
-            this.$time_info.text(this.time.toFixed(1) + ' с');
+            this.$time_info.text(this.time.toFixed(1) + this.message(' с'));
 
             if (!this.animation_paused)
                 this.last_raf_id = requestAnimationFrame(this.go); //TODO make this line a method
@@ -315,7 +318,7 @@ export class Batman {
     }
 
     initParamsSelector(domNode) {
-        this.initial_params_values_input = new InitialValuesInput(this.settings.rounding);
+        this.initial_params_values_input = new InitialValuesInput(this, this.settings.rounding);
         this.initial_params_values_input.values = {
             'initial_theta': 0,
             'initial_v': 10,
@@ -325,7 +328,7 @@ export class Batman {
 
         domNode.appendChild(this.initial_params_values_input.domNode);
 
-        this.actions_list_of_elements = new ListOfElements(() => this.createIntermediateValues(), [], 'добавить действие', 'удалить действие');
+        this.actions_list_of_elements = new ListOfElements(() => this.createIntermediateValues(), [], this.message('добавить действие'), this.message('удалить действие'));
         this.actions_list_of_elements.add_remove_extra_action = () => {
             this.full_resize();
             this.userChangedInput();
@@ -336,7 +339,7 @@ export class Batman {
     }
 
     createIntermediateValues() {
-        let ivi = new IntermediateValuesInput(this.settings.rounding);
+        let ivi = new IntermediateValuesInput(this, this.settings.rounding);
         ivi.change_handler = this.userChangedInput.bind(this);
         return ivi;
     }

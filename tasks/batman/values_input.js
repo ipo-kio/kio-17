@@ -1,12 +1,12 @@
 export class ValuesInput {
-    constructor(...params) { // each param is {name, type}
+    constructor(problem, ...params) { // each param is {name, type}
         this.params = params;
         this.name2input = {};
 
-        this.initInterface(params);
+        this.initInterface(problem, params);
     }
 
-    initInterface(params) {
+    initInterface(problem, params) {
         this.domNode = document.createElement('div');
         this.domNode.className = 'kio-batman-values-list';
 
@@ -87,30 +87,31 @@ export class ValuesInput {
 }
 
 export class InitialValuesInput extends ValuesInput {
-    constructor(v_round_mul) {
+    constructor(problem, v_round_mul) {
         super(
+            problem,
             {name: 'initial_theta', round_mul: 1, min: -60, max: 60},
             {name: 'initial_v', round_mul: v_round_mul, min: 0, max: 20},
             {name: 'initial_pose', round_mul: 1, min: null, max: null}
         );
     }
 
-    initInterface() {
+    initInterface(problem) {
         //Прыгнуть под углом *** градусов со скоростью *** м/c в позиции
 
         this.domNode = document.createElement('div');
         this.domNode.className = 'kio-batman-initial-values-list';
 
         let sp1 = document.createElement('span');
-        sp1.innerText = 'Прыгнуть под углом';
+        sp1.innerText = problem.message('Прыгнуть под углом');
         let sp2 = document.createElement('span');
-        sp2.innerText = 'градусов со скоростью';
+        sp2.innerText = problem.message('градусов со скоростью');
         let sp3 = document.createElement('span');
-        sp3.innerText = 'м/c в позиции';
+        sp3.innerText = problem.message('м/c в позиции');
 
         let inp1 = this.createInput('initial_theta', 5);
         let inp2 = this.createInput('initial_v', 5);
-        let inp3 = this.createSelect('initial_pose', ['Первая поза', 'Вторая поза', 'Третья поза']);
+        let inp3 = this.createSelect('initial_pose', [problem.message('Первая поза'), problem.message('Вторая поза'), problem.message('Третья поза')]);
 
         this.domNode.appendChild(sp1);
         this.domNode.appendChild(inp1);
@@ -122,26 +123,27 @@ export class InitialValuesInput extends ValuesInput {
 }
 
 export class IntermediateValuesInput extends ValuesInput {
-    constructor(time_round_mul) {
+    constructor(problem, time_round_mul) {
         super(
+            problem,
             {name: 'next_time', round_mul: time_round_mul, min: 0, max: 60},
             {name: 'next_pose', round_mul: 1, min: null, max: null}
         );
     }
 
-    initInterface() {
+    initInterface(problem) {
         //Прыгнуть под углом *** градусов со скоростью *** м/c в позиции
 
         this.domNode = document.createElement('div');
         this.domNode.className = 'kio-batman-intermediate-values-list';
 
         let sp1 = document.createElement('span');
-        sp1.innerText = 'В секунду';
+        sp1.innerText = problem.message('В секунду');
         let sp2 = document.createElement('span');
-        sp2.innerText = 'изменить позу на';
+        sp2.innerText = problem.message('изменить позу на');
 
         let inp1 = this.createInput('next_time', 5);
-        let inp2 = this.createSelect('next_pose', ['Первая поза', 'Вторая поза', 'Третья поза']);
+        let inp2 = this.createSelect('next_pose', [problem.message('Первая поза'), problem.message('Вторая поза'), problem.message('Третья поза')]);
 
         this.domNode.appendChild(sp1);
         this.domNode.appendChild(inp1);

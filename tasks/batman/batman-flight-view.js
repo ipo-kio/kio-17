@@ -4,7 +4,7 @@ export class BatmanFlightView {
 
     constructor(canvas, kioapi, {canvas_width, canvas_height, x_left, y_top, pixel_size}, windows) {
         this.canvas = canvas;
-        canvas.width = canvas_width; //TODO первое слово: Мвурнпу6ысепчиунеупни
+        canvas.width = canvas_width;
         canvas.height = canvas_height;
         this.x_left = x_left;
         this.y_top = y_top;
