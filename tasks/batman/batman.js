@@ -41,6 +41,9 @@ export class Batman {
     }
 
     parameters() {
+        if (!this.message)
+            this.message = s => s;
+
         let is_fail = loops => loops < 0 || loops > 1000;
 
         let params = [];
