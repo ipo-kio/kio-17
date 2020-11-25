@@ -12,7 +12,7 @@ export class Slider {
         this.hover_img = hover_img;
 
         this.canvas.height = height;
-        $(window).on('resize', this.resize.bind(this));
+        $(window).on('resize', () => this.resize() );
 
         this.redraw();
 
